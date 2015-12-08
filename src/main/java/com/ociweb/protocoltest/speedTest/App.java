@@ -29,6 +29,10 @@ public class App {
     
     public static void main(String[] args) {
        
+        runSpeedTest();
+    }
+
+    public static void runSpeedTest() {
         log.info("Hello World, we are running...");
                
         //Can we hit 1Gb with shuch a small message? 16 bytes.
@@ -51,8 +55,8 @@ public class App {
         
         ExecutorService executor = Executors.newFixedThreadPool(2,factory);
         
-        Producer p = new Producer(regulator, totalMessageCount);
-        Consumer c = new Consumer(regulator, totalMessageCount, histogram);
+        Runnable p = buildProducer(totalMessageCount, regulator);
+        Runnable c = buildConsumer(totalMessageCount, histogram, regulator);
            
         long startTime = System.currentTimeMillis();
         
@@ -92,6 +96,16 @@ public class App {
         System.out.println();
         System.out.println("Process CPU Usage (All threads started by this Java instance)");
         cpuHist.outputPercentileDistribution(System.out, CPUMonitor.UNIT_SCALING_RATIO);
+    }
+
+    public static Runnable buildConsumer(int totalMessageCount, Histogram histogram, StreamRegulator regulator) {
+        Runnable c = new Consumer(regulator, totalMessageCount, histogram);
+        return c;
+    }
+
+    public static Runnable buildProducer(int totalMessageCount, StreamRegulator regulator) {
+        Runnable p = new Producer(regulator, totalMessageCount);
+        return p;
     }
     
 

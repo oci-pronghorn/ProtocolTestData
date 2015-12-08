@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.ociweb.pronghorn.code.LoaderUtil;
+import com.ociweb.pronghorn.pipe.DataOutputBlobWriter;
 import com.ociweb.pronghorn.pipe.MessageSchema;
 import com.ociweb.pronghorn.pipe.Pipe;
 import com.ociweb.pronghorn.pipe.PipeConfig;
@@ -36,8 +37,7 @@ public class GenerateGeneratorsTest {
     public void generateSequenceExampleA() {
         
         StringBuilder target = new StringBuilder();
-        boolean asRunnable = true;
-        FuzzGeneratorGenerator ew = new SequenceExampleAGenerator(target, asRunnable, 11);
+        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null, 11);
 
         try {
             ew.processSchema();
@@ -47,7 +47,7 @@ public class GenerateGeneratorsTest {
             fail();
         }        
         
-        //System.out.println(target);
+        System.out.println(target);
         
         Class clazz = validateCleanCompile(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance);
         
@@ -55,12 +55,20 @@ public class GenerateGeneratorsTest {
             
             Object obj = clazz.newInstance();
             
-            Method nextObjMethod = clazz.getMethod("skip",int.class);
+            SequenceExampleAFactory factory = (SequenceExampleAFactory)obj;
+            
+            factory.startup();
             
             int count = 200000;
             long startTime = System.currentTimeMillis();
             
-            nextObjMethod.invoke(obj, count);
+            int i = count;
+            while (--i>=0) {
+                
+                SequenceExampleA temp = factory.nextObject();
+                                
+            }
+                        
             
             long duration = System.currentTimeMillis()-startTime;
             
@@ -79,10 +87,6 @@ public class GenerateGeneratorsTest {
             System.out.println(target);
             e.printStackTrace();
             fail();
-        } catch (NoSuchMethodException e) {
-            System.out.println(target);
-            e.printStackTrace();
-            fail();
         } catch (SecurityException e) {
             System.out.println(target);
             e.printStackTrace();
@@ -91,19 +95,15 @@ public class GenerateGeneratorsTest {
             System.out.println(target);
             e.printStackTrace();
             fail();
-        } catch (InvocationTargetException e) {
-            System.out.println(target);
-            e.printStackTrace();
-            fail();
-        }
+        } 
     }
     
     @Test
     public void generateSequenceExampleAStage() {
         
         StringBuilder target = new StringBuilder();
-        boolean asRunnable = false;
-        FuzzGeneratorGenerator ew = new SequenceExampleAGenerator(target, asRunnable, 11);
+        
+        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target, 11);
 
         try {
             ew.processSchema();
@@ -113,7 +113,7 @@ public class GenerateGeneratorsTest {
             fail();
         }        
         
-        System.out.println(target);
+      //  System.out.println(target);
         
         Class clazz = validateCleanCompile(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance);
         
@@ -205,6 +205,5 @@ public class GenerateGeneratorsTest {
         return null;
         
     }
-    
-    
+
 }

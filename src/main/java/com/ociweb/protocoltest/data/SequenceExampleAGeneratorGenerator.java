@@ -6,7 +6,7 @@ import com.ociweb.pronghorn.pipe.stream.LowLevelStateManager;
 import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
 import com.ociweb.pronghorn.util.Appendables;
 
-public class SequenceExampleAGenerator extends FuzzGeneratorGenerator {
+public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
 
     private final static String WORKING_SPACE = "working";
     private final static String WORKING_IDX   = "workingIdx";
@@ -16,8 +16,8 @@ public class SequenceExampleAGenerator extends FuzzGeneratorGenerator {
     private final static int    WORKING_SIZE = 1<<WORKING_BITS;
     private final static int    WORKING_MASK = WORKING_SIZE-1;
     
-    public SequenceExampleAGenerator(Appendable target, boolean asRunnable, int seqCountBits) {
-        super(SequenceExampleASchema.instance, target, asRunnable, false);
+    public SequenceExampleAGeneratorGenerator(Appendable target, int seqCountBits) {
+        super(SequenceExampleASchema.instance, target, false, false);
         
         setMaxSequenceLengthInBits(seqCountBits);
         
@@ -26,6 +26,19 @@ public class SequenceExampleAGenerator extends FuzzGeneratorGenerator {
         //TODO: need to modify run to continue until object is complete? use the  if statement instead of case?
         
     }
+    
+    //  
+    public SequenceExampleAGeneratorGenerator(Appendable target, Object ignore, int seqCountBits) {
+        super(SequenceExampleASchema.instance, target, "extends SequenceExampleAFactory", false);
+        
+        setMaxSequenceLengthInBits(seqCountBits);
+        
+        //TODO: add method here for building sparse array.
+        //TODO: need to fix zero length case for sequence
+        //TODO: need to modify run to continue until object is complete? use the  if statement instead of case?
+        
+    }
+    
     
     @Override
     protected void additionalMembers(Appendable target) throws IOException {
@@ -40,6 +53,8 @@ public class SequenceExampleAGenerator extends FuzzGeneratorGenerator {
     protected void additionalImports(Appendable target) throws IOException {
         super.additionalImports(target);
         target.append("import ").append(SequenceExampleA.class.getCanonicalName()).append(";\n");       
+        target.append("import ").append(SequenceExampleAFactory.class.getCanonicalName()).append(";\n");         
+        
     }
     
     @Override

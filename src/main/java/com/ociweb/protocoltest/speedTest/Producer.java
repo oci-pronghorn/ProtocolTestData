@@ -18,7 +18,9 @@ public class Producer implements Runnable {
     public Producer(StreamRegulator regulator, int count) {
         this.regulator = regulator;
         this.count = count;
+        
     }
+
     
     @Override
     public void run() {
