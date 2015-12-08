@@ -9,13 +9,13 @@ import com.ociweb.pronghorn.util.Appendables;
 
 public class SequenceExampleA {
 
-    private int user;
-    private int year;
-    private int month;
-    private int date;
-    private int sampleCount;
+    int user;
+    int year;
+    int month;
+    int date;
+    int sampleCount;
     
-    private SequenceExampleASample[] samples;
+    SequenceExampleASample[] samples;
     private List<SequenceExampleASample> samplesAsList = new SampleList();
 
     public String toString() {

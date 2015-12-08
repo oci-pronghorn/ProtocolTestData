@@ -5,10 +5,10 @@ import java.io.IOException;
 import com.ociweb.pronghorn.util.Appendables;
 
 public class SequenceExampleASample {
-    private int id;
-    private long time;
-    private int measurement;
-    private int action;
+    int id;
+    long time;
+    int measurement;
+    int action;
         
     public static void setAll(SequenceExampleASample that,int id, long time, int measurement, int action) {
         that.id = id;

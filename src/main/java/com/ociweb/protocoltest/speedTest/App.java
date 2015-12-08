@@ -43,8 +43,8 @@ public class App {
         
         
         long bitPerSecond = 1L*1024L*1024L*1024L;
-        int maxWrittenChunksInFlight = 10;
-        int maxWrittenChunkSizeInBytes= 64;//10*1024;
+        int maxWrittenChunksInFlight = 100000;//keeping this large lowers the contention on head/tail
+        int maxWrittenChunkSizeInBytes= 32;//10*1024;
         StreamRegulator regulator = new StreamRegulator(bitPerSecond, maxWrittenChunksInFlight, maxWrittenChunkSizeInBytes);
                 
         CPUMonitor cpuMonitor = new CPUMonitor(100);
