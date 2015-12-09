@@ -34,6 +34,8 @@ public class ReadWriteTest {
         
     };
     
+    public static long estimateOrigBytes;
+    
     private static final Logger log = LoggerFactory.getLogger(ReadWriteTest.class);
     
     //Never call this in production code, this is only done here becaue the code is not yet fully generated.
@@ -42,13 +44,17 @@ public class ReadWriteTest {
             StringBuilder target = new StringBuilder();
             FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null, 11);
 
+            
             try {
                 ew.processSchema();
+                System.out.println("dynamicLoadOfFactory() :\n\n"+ target);
             } catch (IOException e) {
                 System.out.println(target);
                 e.printStackTrace();
                 fail();
             } 
+            
+            System.out.println(target);
             
             Class generateClass = LoaderUtil.generateClass(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance.getClass());
             return (SequenceExampleAFactory)generateClass.newInstance();
@@ -80,8 +86,8 @@ public class ReadWriteTest {
         Histogram histogram = new Histogram(3600000000000L, 3);
         
         
-        long bitPerSecond = 1L*1024L*1024L*1024L;
-        int maxWrittenChunksInFlight = 1000000;//keeping this large lowers the contention on head/tail
+        long bitPerSecond = 10L*1024L*1024L*1024L;
+        int maxWrittenChunksInFlight = 80000;//keeping this large lowers the contention on head/tail
         int maxWrittenChunkSizeInBytes= 32;//10*1024;
         StreamRegulator regulator = new StreamRegulator(bitPerSecond, maxWrittenChunksInFlight, maxWrittenChunkSizeInBytes);
                 
@@ -127,7 +133,14 @@ public class ReadWriteTest {
         cpuHist.outputPercentileDistribution(System.out, CPUMonitor.UNIT_SCALING_RATIO);
         
         //TODO: how do we know the compression ratio? ask the factory for the raw size?
+      
         
+        float fraction = ((float)totalBytesSent) / ((float)estimateOrigBytes);
+        System.out.println(fraction);
+        
+        float compression = 100f*(1f - fraction);
+        log.info("Pct compressed {}",compression);
+        log.info("Raw bytes :"+estimateOrigBytes);
         
         log.info("K Mgs Per Second {}",kmsgPerSec);
         log.info("Total duration {}ms",durationInMs);
@@ -151,6 +164,7 @@ public class ReadWriteTest {
         private Histogram histogram;
         private DataInputBlobReader<RawDataSchema> reader;
         private StreamRegulator regulator;
+      //  private SequenceExampleAFactory factory;
         
         
         
@@ -159,48 +173,51 @@ public class ReadWriteTest {
             this.histogram = histogram;
             this.reader = regulator.getBlobReader();
             this.regulator = regulator;
+        //    this.factory = dynamicLoadOfFactory();
+            //this.factory = new TestFactory();
             
         }
         @Override
         public void run() {
             SequenceExampleA target = new SequenceExampleA();
+            SequenceExampleA.ensureCapacity(target, (1<<11)+1);
             
             int i = totalMessageCount;
-            StreamRegulator r = regulator; //TODO: may want to make same change in protocol test.
+           
+            long lastNow = 0;
+            
             Histogram h = histogram;
             while (i>0) {
-                while (r.hasNextChunk() && --i>=0) {
+                while (regulator.hasNextChunk() && --i>=0) {
                     //use something to read the data from the input stream
   
-                        SequenceExampleASimpleReadWrite.read(target, reader);    
+                      //  nextObject = factory.nextObject();
+                    
+                        SequenceExampleASimpleReadWrite.read(target, reader);   
+                        
+//                        if(!target.equals(nextObject)) {
+//                            System.out.println("error");
+//                            
+//                            System.out.println(target);
+//                            System.out.println(nextObject);
+//                            
+//                            System.exit(0);
+//                        }
                     
                         //This should come from one of the fields inside the encoded message
-                        try {
-                        
-                            long timeMessageWasSent;
-                            timeMessageWasSent = ( ( (  (long)reader.read()) << 56) |     //Do not keep this code, for example only.         
-                                                        ( (0xFFl & reader.read()) << 48) |
-                                                        ( (0xFFl & reader.read()) << 40) |
-                                                        ( (0xFFl & reader.read()) << 32) |
-                                                        ( (0xFFl & reader.read()) << 24) |
-                                                        ( (0xFFl & reader.read()) << 16) |
-                                                        ( (0xFFl & reader.read()) << 8) |
-                                                          (0xFFl & reader.read()) );
+
+                            long timeMessageWasSentDelta = reader.readPackedLong();
+                            lastNow += timeMessageWasSentDelta;
+                            
                             //Note after the message is decoded the latency for the message must be computed using.
-                            long latency = System.nanoTime() - timeMessageWasSent;
+                            
+                            long latency = System.nanoTime() - lastNow;
                             if (latency>=0) {//conditional to protect against numerical overflow, see docs on nanoTime();
                                 h.recordValue(latency);
-                            }
-
-                        } catch (IOException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } 
-                        
-                        
-                        
+                            }                         
+                                                
                 }
-              //  Thread.yield(); //Only happens when the pipe is empty and there is nothing to read, eg consumer is faster than producer.  
+                Thread.yield(); //Only happens when the pipe is empty and there is nothing to read, eg consumer is faster than producer.  
             }
             
             
@@ -218,44 +235,40 @@ public class ReadWriteTest {
         private int totalMessageCount;
         private SequenceExampleAFactory factory;
         private StreamRegulator regulator;
-        
+                
         public MyProducer(StreamRegulator regulator, int totalMessageCount) {
             this.regulator = regulator;
             this.writer = regulator.getBlobWriter();
             this.totalMessageCount = totalMessageCount;
             this.factory = dynamicLoadOfFactory();
+            //this.factory = new TestFactory();
+            
             
         }
         @Override
         public void run() {
 
-           // SequenceExampleA nextObject = factory.nextObject();
+            long lastNow = 0;
             
             int i = totalMessageCount;
             while (i>0) {
                 while (regulator.hasRoomForChunk() && --i>=0) { //Note we are only dec when ther is room for write
                     
                     //NOTE: the messages sent must contain the timestamp for now so we can compute latency per message 
+                    
                     long now = System.nanoTime();
+                                                         
                     
                     SequenceExampleA nextObject = factory.nextObject();
                     
-                    SequenceExampleASimpleReadWrite.write(nextObject, writer);
+                    if (0==estimateOrigBytes) {
+                        estimateOrigBytes = nextObject.estimatedBytes()*(long)totalMessageCount;
                         
-                    try {
-                        writer.write((byte)(now >>> 56));
-                        writer.write((byte)(now >>> 48));//Do not keep this code, for example only.
-                        writer.write((byte)(now >>> 40));//Do not keep this code, for example only.
-                        writer.write((byte)(now >>> 32));//Do not keep this code, for example only.
-                        writer.write((byte)(now >>> 24));//Do not keep this code, for example only.
-                        writer.write((byte)(now >>> 16));//Do not keep this code, for example only.
-                        writer.write((byte)(now >>> 8));//Do not keep this code, for example only.
-                        writer.write((byte) now);//Do not keep this code, for example only.
-                    } catch (IOException e) {
-                      throw new RuntimeException(e);
-                    }//Do not keep this code, for example only.
-                      
+                    }
                     
+                    SequenceExampleASimpleReadWrite.write(nextObject, writer);
+                    writer.writePackedLong(now-lastNow);    
+                    lastNow = now;               
                     
                 }
                 Thread.yield(); //we are faster than the consumer

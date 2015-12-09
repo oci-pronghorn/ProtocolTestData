@@ -19,7 +19,9 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
     public SequenceExampleAGeneratorGenerator(Appendable target, int seqCountBits) {
         super(SequenceExampleASchema.instance, target, false, false);
         
-        setMaxSequenceLengthInBits(seqCountBits);
+        setFixedSequenceLength(2048);
+        setTimeFieldId(204);
+        setIncFieldId(203);
         
         //TODO: add method here for building sparse array.
         //TODO: need to fix zero length case for sequence
@@ -31,7 +33,11 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
     public SequenceExampleAGeneratorGenerator(Appendable target, Object ignore, int seqCountBits) {
         super(SequenceExampleASchema.instance, target, "extends SequenceExampleAFactory", false);
         
-        setMaxSequenceLengthInBits(seqCountBits);
+        setFixedSequenceLength(2048);
+        setTimeFieldId(204);
+        setIncFieldId(203);
+        
+     //   setMaxSequenceLengthInBits(seqCountBits);
         
         //TODO: add method here for building sparse array.
         //TODO: need to fix zero length case for sequence

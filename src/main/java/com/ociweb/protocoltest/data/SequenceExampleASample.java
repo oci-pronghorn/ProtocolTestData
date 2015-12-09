@@ -5,6 +5,7 @@ import java.io.IOException;
 import com.ociweb.pronghorn.util.Appendables;
 
 public class SequenceExampleASample {
+    
     int id;
     long time;
     int measurement;
@@ -39,6 +40,10 @@ public class SequenceExampleASample {
         return target;
     }
     
+    public static int estimatedBytes() {
+       return (4*3)+8;
+    }
+    
     public String toString() {
         try {
             return appendToString(new StringBuilder()).toString();
@@ -71,6 +76,8 @@ public class SequenceExampleASample {
     public void setAction(int action) {
         this.action = action;
     }
+
+ 
 
 
        

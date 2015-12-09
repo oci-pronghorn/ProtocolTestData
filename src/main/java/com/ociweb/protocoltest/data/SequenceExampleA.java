@@ -26,6 +26,10 @@ public class SequenceExampleA {
         }
     }
     
+    public long estimatedBytes() {
+        return (5*4)+(sampleCount*SequenceExampleASample.estimatedBytes());
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SequenceExampleA) {
@@ -34,7 +38,8 @@ public class SequenceExampleA {
                    this.year == that.year &&
                    this.month == that.month &&
                    this.date == that.date &&
-                   this.sampleCount == that.sampleCount &&
+                   this.sampleCount == that.sampleCount
+            &&
                    Arrays.deepEquals(this.samples, that.samples);
         }
         return false;
@@ -108,15 +113,15 @@ public class SequenceExampleA {
         ensureCapacity(this, sampleCount);
     }
 
-    private static void ensureCapacity(SequenceExampleA that, int sampleCount) {
+    public static void ensureCapacity(SequenceExampleA that, int sampleCount) {
         //System.out.println("capacity of "+sampleCount);
         //TODO: NOTE when the sample count is zero we crash because it gets run anyway - FIX ASAP
-        if (sampleCount==0) {
-            sampleCount = 1;
-        }
         
         
         if (null==that.samples || that.samples.length<sampleCount) {
+            if (sampleCount==0) {
+                sampleCount = 1;
+            }
             that.samples = new SequenceExampleASample[sampleCount];
             int i = sampleCount;
             while (--i>=0) {
