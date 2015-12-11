@@ -73,7 +73,7 @@ public class App {
         try {
             if (!executor.awaitTermination(2000, TimeUnit.SECONDS)) {
                 log.error("test time out, no valid results");
-                System.exit(-1);
+                return;
             }
         } catch (InterruptedException e) {
             //Nothing to do Just exit

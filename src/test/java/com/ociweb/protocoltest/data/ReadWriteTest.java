@@ -122,7 +122,7 @@ public class ReadWriteTest {
         try {
             if (!executor.awaitTermination(2000, TimeUnit.SECONDS)) {
                 log.error("test time out, no valid results");
-                System.exit(-1);
+                return;
             }
         } catch (InterruptedException e) {
             //Nothing to do Just exit
@@ -210,7 +210,7 @@ public class ReadWriteTest {
 //                        if(!target.equals(nextObject)) {
 //                            System.out.println("error "+i);
 //                                                        
-//                            System.exit(0);
+//                            
 //                        }
                     
                         //This should come from one of the fields inside the encoded message
