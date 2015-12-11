@@ -10,6 +10,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.HdrHistogram.Histogram;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,7 +79,7 @@ public class ReadWriteTest {
         return null;
     }
     
-    @Test
+    @Ignore
     public void runSpeedTest() {
         runLoad();
     }
@@ -95,7 +96,7 @@ public class ReadWriteTest {
         //    larger messages will consume more bandwidth up into 10's Gbps
         
         
-        final int totalMessageCount = 100000; //large fixed value for running the test
+        final int totalMessageCount = 10000; //large fixed value for running the test
         Histogram histogram = new Histogram(3600000000000L, 3);
         
         
