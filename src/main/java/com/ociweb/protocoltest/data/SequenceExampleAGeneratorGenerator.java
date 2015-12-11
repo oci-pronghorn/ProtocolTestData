@@ -22,6 +22,7 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
         setFixedSequenceLength(2048);
         setTimeFieldId(204);
         setIncFieldId(203);
+        setSmallFieldId(206);
         
         //TODO: add method here for building sparse array.
         //TODO: need to fix zero length case for sequence
@@ -36,6 +37,7 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
         setFixedSequenceLength(2048);
         setTimeFieldId(204);
         setIncFieldId(203);
+        setSmallFieldId(206);
         
      //   setMaxSequenceLengthInBits(seqCountBits);
         
@@ -78,14 +80,6 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
         target.append(tab).append("return ").append(WORKING_SPACE).append(";\n");
         target.append("}\n");
                
-        
-        
-        //public SequenceExampleA nextObject() {        
-        //  do {
-        //     run();
-        //  } while (!LowLevelStageManager.isStartNewMessage(navState));        
-        //return workingObj;
-        //}
         
         target.append("public ").append(SequenceExampleA.class.getSimpleName()).append(" nextObject(){\n");
         target.append(tab).append("do {\n");

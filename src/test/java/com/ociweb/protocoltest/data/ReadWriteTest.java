@@ -3,6 +3,7 @@ package com.ociweb.protocoltest.data;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -19,6 +20,7 @@ import com.ociweb.pronghorn.pipe.DataOutputBlobWriter;
 import com.ociweb.pronghorn.pipe.RawDataSchema;
 import com.ociweb.pronghorn.pipe.util.StreamRegulator;
 import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
+import com.ociweb.pronghorn.util.Appendables;
 import com.ociweb.pronghorn.util.CPUMonitor;
 
 public class ReadWriteTest {
@@ -38,26 +40,31 @@ public class ReadWriteTest {
     
     private static final Logger log = LoggerFactory.getLogger(ReadWriteTest.class);
     
+    private static Class generatedClass = null;
+    
     //Never call this in production code, this is only done here becaue the code is not yet fully generated.
-    private static SequenceExampleAFactory dynamicLoadOfFactory() {
+    private static synchronized SequenceExampleAFactory dynamicLoadOfFactory() {
         try {
-            StringBuilder target = new StringBuilder();
-            FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null, 11);
-
-            
-            try {
-                ew.processSchema();
-                System.out.println("dynamicLoadOfFactory() :\n\n"+ target);
-            } catch (IOException e) {
+            if (null==generatedClass) {
+                StringBuilder target = new StringBuilder();
+                FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null, 11);
+                    
+                try {
+                    ew.processSchema();
+                    System.out.println("dynamicLoadOfFactory() :\n\n"+ target);
+                } catch (IOException e) {
+                    System.out.println(target);
+                    e.printStackTrace();
+                    fail();
+                } 
+                
                 System.out.println(target);
-                e.printStackTrace();
-                fail();
-            } 
+                
+                generatedClass = LoaderUtil.generateClass(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance.getClass());
+            }
             
-            System.out.println(target);
             
-            Class generateClass = LoaderUtil.generateClass(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance.getClass());
-            return (SequenceExampleAFactory)generateClass.newInstance();
+            return (SequenceExampleAFactory)generatedClass.newInstance();
             
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -73,8 +80,14 @@ public class ReadWriteTest {
     
     @Test
     public void runSpeedTest() {
-        
-               
+        runLoad();
+    }
+    
+    public static void main(String[] arg) {
+        runLoad();
+    }
+
+    private static void runLoad() {
         //Can we hit 1Gb with shuch a small message? 16 bytes.
         
         //NOTE the fastest handoff is 10-20 million messages per second
@@ -86,9 +99,9 @@ public class ReadWriteTest {
         Histogram histogram = new Histogram(3600000000000L, 3);
         
         
-        long bitPerSecond = 10L*1024L*1024L*1024L;
-        int maxWrittenChunksInFlight = 80000;//keeping this large lowers the contention on head/tail
-        int maxWrittenChunkSizeInBytes= 32;//10*1024;
+        long bitPerSecond = 100L*1024L*1024L*1024L;
+        int maxWrittenChunksInFlight = 10000;//keeping this large lowers the contention on head/tail
+        int maxWrittenChunkSizeInBytes= 40*1024;
         StreamRegulator regulator = new StreamRegulator(bitPerSecond, maxWrittenChunksInFlight, maxWrittenChunkSizeInBytes);
                 
         CPUMonitor cpuMonitor = new CPUMonitor(100);
@@ -135,9 +148,7 @@ public class ReadWriteTest {
         //TODO: how do we know the compression ratio? ask the factory for the raw size?
       
         
-        float fraction = ((float)totalBytesSent) / ((float)estimateOrigBytes);
-        System.out.println(fraction);
-        
+        float fraction = ((float)totalBytesSent) / ((float)estimateOrigBytes);        
         float compression = 100f*(1f - fraction);
         log.info("Pct compressed {}",compression);
         log.info("Raw bytes :"+estimateOrigBytes);
@@ -164,7 +175,7 @@ public class ReadWriteTest {
         private Histogram histogram;
         private DataInputBlobReader<RawDataSchema> reader;
         private StreamRegulator regulator;
-      //  private SequenceExampleAFactory factory;
+        private SequenceExampleAFactory factory;
         
         
         
@@ -173,49 +184,40 @@ public class ReadWriteTest {
             this.histogram = histogram;
             this.reader = regulator.getBlobReader();
             this.regulator = regulator;
-        //    this.factory = dynamicLoadOfFactory();
+            this.factory = dynamicLoadOfFactory();
             //this.factory = new TestFactory();
             
         }
         @Override
         public void run() {
             SequenceExampleA target = new SequenceExampleA();
-            SequenceExampleA.ensureCapacity(target, (1<<11)+1);
+            SequenceExampleA.ensureCapacity(target, 1<<11);
             
             int i = totalMessageCount;
            
             long lastNow = 0;
             
+            SequenceExampleA nextObject = factory.nextObject();
             Histogram h = histogram;
             while (i>0) {
                 while (regulator.hasNextChunk() && --i>=0) {
                     //use something to read the data from the input stream
   
-                      //  nextObject = factory.nextObject();
                     
                         SequenceExampleASimpleReadWrite.read(target, reader);   
                         
+                        //Time wraps arround to zero and stops working?
 //                        if(!target.equals(nextObject)) {
-//                            System.out.println("error");
-//                            
-//                            System.out.println(target);
-//                            System.out.println(nextObject);
-//                            
+//                            System.out.println("error "+i);
+//                                                        
 //                            System.exit(0);
 //                        }
                     
                         //This should come from one of the fields inside the encoded message
 
-                            long timeMessageWasSentDelta = reader.readPackedLong();
-                            lastNow += timeMessageWasSentDelta;
-                            
-                            //Note after the message is decoded the latency for the message must be computed using.
-                            
-                            long latency = System.nanoTime() - lastNow;
-                            if (latency>=0) {//conditional to protect against numerical overflow, see docs on nanoTime();
-                                h.recordValue(latency);
-                            }                         
-                                                
+                        lastNow = recordLatency(lastNow, h, reader);     
+    
+                        nextObject = factory.nextObject();                       
                 }
                 Thread.yield(); //Only happens when the pipe is empty and there is nothing to read, eg consumer is faster than producer.  
             }
@@ -225,6 +227,18 @@ public class ReadWriteTest {
             
             
             
+        }
+        public static long recordLatency(long lastNow, Histogram h, DataInputBlobReader<RawDataSchema> reader) {
+            long timeMessageWasSentDelta = reader.readPackedLong();
+            
+            lastNow += timeMessageWasSentDelta;                            
+            //Note after the message is decoded the latency for the message must be computed using.
+            
+            long latency = System.nanoTime() - lastNow;
+            if (latency>=0 && 0!=lastNow) {//conditional to protect against numerical overflow, see docs on nanoTime();
+                h.recordValue(latency);
+            }
+            return lastNow;
         }
         
     }
@@ -248,7 +262,10 @@ public class ReadWriteTest {
         @Override
         public void run() {
 
-            long lastNow = 0;
+            long lastNow = 0;           
+            
+            SequenceExampleA nextObject = factory.nextObject();
+            estimateOrigBytes = nextObject.estimatedBytes()*(long)totalMessageCount;  
             
             int i = totalMessageCount;
             while (i>0) {
@@ -256,26 +273,26 @@ public class ReadWriteTest {
                     
                     //NOTE: the messages sent must contain the timestamp for now so we can compute latency per message 
                     
-                    long now = System.nanoTime();
-                                                         
-                    
-                    SequenceExampleA nextObject = factory.nextObject();
-                    
-                    if (0==estimateOrigBytes) {
-                        estimateOrigBytes = nextObject.estimatedBytes()*(long)totalMessageCount;
-                        
-                    }
-                    
                     SequenceExampleASimpleReadWrite.write(nextObject, writer);
-                    writer.writePackedLong(now-lastNow);    
-                    lastNow = now;               
+                    
+                    lastNow = recordSentTime(lastNow, writer);               
+                    
+                    nextObject = factory.nextObject();
                     
                 }
                 Thread.yield(); //we are faster than the consumer
             }
+                        
             
-            
-            
+        }
+        
+        public static long recordSentTime(long lastNow, DataOutputBlobWriter<RawDataSchema> writer) {
+            long now = System.nanoTime();
+            if (now < lastNow) {//defend against the case that this is not "real" time and can move backwards.
+                now = lastNow;
+            }
+            writer.writePackedLong(now-lastNow);                       
+            return now;
         }
         
     }

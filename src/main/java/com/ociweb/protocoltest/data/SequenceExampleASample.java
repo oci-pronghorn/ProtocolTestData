@@ -30,6 +30,8 @@ public class SequenceExampleASample {
         return false;
     }
     
+
+    
     public <A extends Appendable> A appendToString(A target) throws IOException {
         
         Appendables.appendValue(target,"Id:" ,id,"\n");

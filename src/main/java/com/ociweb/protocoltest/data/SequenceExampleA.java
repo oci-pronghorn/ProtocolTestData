@@ -5,10 +5,15 @@ import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.ociweb.pronghorn.util.Appendables;
 
 public class SequenceExampleA {
 
+    private final static Logger log = LoggerFactory.getLogger(SequenceExampleA.class);
+    
     int user;
     int year;
     int month;
@@ -38,11 +43,30 @@ public class SequenceExampleA {
                    this.year == that.year &&
                    this.month == that.month &&
                    this.date == that.date &&
-                   this.sampleCount == that.sampleCount
-            &&
-                   Arrays.deepEquals(this.samples, that.samples);
+                   this.sampleCount == that.sampleCount &&
+                   boundedEquals(this.samples,that.samples, that.sampleCount);
+                 
         }
         return false;
+    }
+
+    private boolean boundedEquals(SequenceExampleASample[] samplesA, 
+                                  SequenceExampleASample[] samplesB,
+                                  int sampleCount) {
+       for(int i = 0; i<sampleCount; i++) {
+           
+           SequenceExampleASample leftSide = samplesA[i];
+           SequenceExampleASample rightSide = samplesB[i];
+           
+           if (leftSide==null) {
+               return rightSide==null;//true when both are null;
+           }
+           if (!leftSide.equals(rightSide)) {
+               log.info("does not equal at index:"+i+"\n  "+leftSide+"  "+rightSide);
+               return false;
+           }
+       }
+       return true;
     }
 
     private <A extends Appendable> A appendToString(A target) throws IOException {
@@ -52,7 +76,7 @@ public class SequenceExampleA {
         Appendables.appendValue(target,"Date:" ,date,"\n");
         Appendables.appendValue(target,"SampleCount:",sampleCount,"\n");
         
-        for(int i=0; i<sampleCount; i++) {
+        for(int i=0; i< 3/*sampleCount*/; i++) {
             target.append("----------------\n");
             samples[i].appendToString(target);
         }
@@ -144,7 +168,8 @@ public class SequenceExampleA {
     }
 
     public static void setSample(SequenceExampleA obj, int idx, int id, long time, int measurement, int action) {
-        SequenceExampleASample.setAll(obj.samples[idx], id, time, measurement, action);   
+        //NOTE: logic to turn around count down value, needs cleanup.
+        SequenceExampleASample.setAll(obj.samples[obj.sampleCount-(idx+1)], id, time, measurement, action);   
     }
     
 }
