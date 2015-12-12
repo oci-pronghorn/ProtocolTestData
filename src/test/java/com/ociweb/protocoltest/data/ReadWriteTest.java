@@ -3,6 +3,8 @@ package com.ociweb.protocoltest.data;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,6 +20,9 @@ import org.slf4j.LoggerFactory;
 import com.ociweb.pronghorn.code.LoaderUtil;
 import com.ociweb.pronghorn.pipe.DataInputBlobReader;
 import com.ociweb.pronghorn.pipe.DataOutputBlobWriter;
+import com.ociweb.pronghorn.pipe.Pipe;
+import com.ociweb.pronghorn.pipe.PipeConfig;
+import com.ociweb.pronghorn.pipe.PipeWriter;
 import com.ociweb.pronghorn.pipe.RawDataSchema;
 import com.ociweb.pronghorn.pipe.util.StreamRegulator;
 import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
@@ -177,7 +182,10 @@ public class ReadWriteTest {
         private DataInputBlobReader<RawDataSchema> reader;
         private StreamRegulator regulator;
         private SequenceExampleAFactory factory;
-        
+               
+        private Pipe<RawDataSchema> workPipe = new Pipe<RawDataSchema>(new PipeConfig<RawDataSchema>(RawDataSchema.instance, 4, 50000));
+        private DataInputBlobReader<RawDataSchema> pipeReader;
+       
         
         
         public MyConsumer(StreamRegulator regulator, int totalMessageCount, Histogram histogram) {
@@ -191,6 +199,10 @@ public class ReadWriteTest {
         }
         @Override
         public void run() {
+            
+            workPipe.initBuffers();
+            pipeReader = new DataInputBlobReader<RawDataSchema>(workPipe);           
+            
             SequenceExampleA target = new SequenceExampleA();
             SequenceExampleA.ensureCapacity(target, 1<<11);
             
@@ -202,33 +214,46 @@ public class ReadWriteTest {
             Histogram h = histogram;
             while (i>0) {
                 while (regulator.hasNextChunk() && --i>=0) {
-                    //use something to read the data from the input stream
-  
+                    lastNow = recordLatency(lastNow, h, reader);     
                     
-                        SequenceExampleASimpleReadWrite.read(target, reader);   
+                       // SequenceExampleASimpleReadWrite.read(target, reader);   
+                        readFromInputStream(target, reader);
                         
-                        //Time wraps arround to zero and stops working?
-//                        if(!target.equals(nextObject)) {
-//                            System.out.println("error "+i);
-//                                                        
-//                            
-//                        }
+                        
+                        if(!target.equals(nextObject)) {
+                            System.out.println("error "+i);  
+                        }
                     
-                        //This should come from one of the fields inside the encoded message
-
-                        lastNow = recordLatency(lastNow, h, reader);     
-    
                         nextObject = factory.nextObject();                       
                 }
                 Thread.yield(); //Only happens when the pipe is empty and there is nothing to read, eg consumer is faster than producer.  
             }
-            
-            
-            
-            
-            
+             
             
         }
+        
+        
+        private void readFromInputStream(SequenceExampleA nextObject, InputStream in) {
+            try {
+            
+             Pipe.addMsgIdx(workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1);            
+             Pipe.readFieldFromInputStream(workPipe, in, in.available());            
+             Pipe.confirmLowLevelWrite(workPipe, Pipe.sizeOf(workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1));//not sure needed when I am both threads
+             Pipe.publishWrites(workPipe);                    
+            
+             
+             Pipe.takeMsgIdx(workPipe);                
+             pipeReader.openLowLevelAPIField();
+             SequenceExampleASimpleReadWrite.read(nextObject, pipeReader); 
+             Pipe.releaseReads(workPipe);
+
+            } catch (IOException e) {
+               throw new RuntimeException(e);
+            }
+            
+        }
+        
+        
         public static long recordLatency(long lastNow, Histogram h, DataInputBlobReader<RawDataSchema> reader) {
             long timeMessageWasSentDelta = reader.readPackedLong();
             
@@ -251,6 +276,9 @@ public class ReadWriteTest {
         private SequenceExampleAFactory factory;
         private StreamRegulator regulator;
                 
+        private Pipe<RawDataSchema> workPipe = new Pipe<RawDataSchema>(new PipeConfig<RawDataSchema>(RawDataSchema.instance, 4, 50000));
+        private DataOutputBlobWriter<RawDataSchema> pipeWriter;
+
         public MyProducer(StreamRegulator regulator, int totalMessageCount) {
             this.regulator = regulator;
             this.writer = regulator.getBlobWriter();
@@ -262,21 +290,24 @@ public class ReadWriteTest {
         }
         @Override
         public void run() {
+            workPipe.initBuffers();
+            pipeWriter = new DataOutputBlobWriter<RawDataSchema>(workPipe);
 
             long lastNow = 0;           
             
             SequenceExampleA nextObject = factory.nextObject();
             estimateOrigBytes = nextObject.estimatedBytes()*(long)totalMessageCount;  
             
+            OutputStream out = (OutputStream)writer;
+            
+            
+            
             int i = totalMessageCount;
             while (i>0) {
                 while (regulator.hasRoomForChunk() && --i>=0) { //Note we are only dec when ther is room for write
-                    
-                    //NOTE: the messages sent must contain the timestamp for now so we can compute latency per message 
-                    
-                    SequenceExampleASimpleReadWrite.write(nextObject, writer);
-                    
                     lastNow = recordSentTime(lastNow, writer);               
+                    
+                    writeToOuputStream(nextObject, out);
                     
                     nextObject = factory.nextObject();
                     
@@ -285,6 +316,24 @@ public class ReadWriteTest {
             }
                         
             
+        }
+        
+        private void writeToOuputStream(SequenceExampleA nextObject, OutputStream out) {
+            Pipe.addMsgIdx(workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1);
+            pipeWriter.openField();
+            
+            SequenceExampleASimpleReadWrite.write(nextObject, pipeWriter);   
+            
+            pipeWriter.closeLowLevelField();
+            Pipe.confirmLowLevelWrite(workPipe, Pipe.sizeOf(workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1));//not sure needed when I am both threads
+            Pipe.publishWrites(workPipe);                    
+            try {
+                Pipe.takeMsgIdx(workPipe);
+                Pipe.writeFieldToOutputStream(workPipe, out);
+                Pipe.releaseReads(workPipe);
+            } catch (IOException e) {
+               throw new RuntimeException(e);
+            }
         }
         
         public static long recordSentTime(long lastNow, DataOutputBlobWriter<RawDataSchema> writer) {

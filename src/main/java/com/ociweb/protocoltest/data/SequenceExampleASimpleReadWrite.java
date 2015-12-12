@@ -5,6 +5,7 @@ import com.ociweb.pronghorn.pipe.DataOutputBlobWriter;
 
 public class SequenceExampleASimpleReadWrite {
 
+    //TODO: will be code generated from schema from
     
     public static class CompressionState {
         
@@ -13,8 +14,7 @@ public class SequenceExampleASimpleReadWrite {
         public int activePMap;
         public int runCountDown;
         
-        public SequenceExampleASample[] samples;
-        
+        public SequenceExampleASample[] samples;        
        
         
         public int defaultAction = 5;
@@ -40,7 +40,10 @@ public class SequenceExampleASimpleReadWrite {
             try {
              //   System.out.println("equals? "+item.id+" "+lastId);
                 
-            return ifEquals(item.id, 1+lastId,          0, 1) |
+//                 return  8|0|0|1; 
+                 
+//                
+                return ifEquals(item.id, 1+lastId,          0, 1) |
                    ifZero((int)item.time,            2, 0) |
                    ifZero(item.measurement,          4, 0) |
                    ifEquals(item.action, defaultAction, 0, 8);
@@ -74,13 +77,14 @@ public class SequenceExampleASimpleReadWrite {
     
     //TODO: move to utility class and build speed tests against mixed conditionals
     private static int ifEquals(int x, int y, int a, int b) {
-      //return x==y?a:b; 
-      return onEqu1(x, y, a, b, ((x-y)-1)>>31);
+        
+      return x==y?a:b; 
+      //return onEqu1(x, y, a, b, ((x-y)-1)>>31);
     }
     
     private static int ifZero(int x, int a, int b) {
-        //return x==y?a:b; 
-        return onZero1(x, a, b, (x-1)>>31);
+        return x==0?a:b; 
+        //return onZero1(x, a, b, (x-1)>>31);
       }
 
     private static int onZero1(int x, int a, int b, int tmp) {
@@ -103,6 +107,10 @@ public class SequenceExampleASimpleReadWrite {
     private static CompressionState state = new CompressionState();
     
     public static void write(SequenceExampleA obj, DataOutputBlobWriter writer) {
+        
+        //TODO: write huffman 10 then the template position value
+        //TODO: write huffman 0 then pmap and possible Run
+        //TODO: Note run is optional and 0 is ok, should stop run on nested members
         
         writer.writePackedInt(obj.user);
         writer.writePackedInt(obj.year);
