@@ -18,11 +18,17 @@ public class PhastReader {
     public final static long timeZero = 0;
     public final static int defaultAction = 5;
     
-    int[] intDictionary = new int[4];
-    long[] longDictionary = new long[4];
+    int[] intDictionary = new int[16];
+    long[] longDictionary = new long[16];
     
     private static final int ID_IDX = 0;
     private static final int MEASUREMENT_IDX = 1;
+    private static final int USER_IDX = 2;
+    private static final int YEAR_IDX = 3;
+    private static final int MONTH_IDX = 4;
+    private static final int DATE_IDX = 5;
+    private static final int SAMPLE_COUNT_IDX = 6;   
+    
     private static final int TIME_IDX = 0;
     
     public PhastReader() {        
@@ -55,17 +61,27 @@ public class PhastReader {
                 
         //TODO: need to record the header in huffman code
         
-        obj.user = reader.readPackedInt();
-        obj.year = reader.readPackedInt();
-        obj.month = reader.readPackedInt();
-        obj.date = reader.readPackedInt();
-        obj.sampleCount = reader.readPackedInt();
+        long templateMap = reader.readPackedLong(); //this int can be RLE as well
+        obj.user = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, USER_IDX, valueZero, 1);       
+        obj.year = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, YEAR_IDX, valueZero, 2);       
+        obj.month = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, MONTH_IDX, valueZero, 4);       
+        obj.date = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, DATE_IDX, valueZero, 8);       
+        obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, 1<<11, 16);       
+        
+        
+//        
+//        obj.user = reader.readPackedInt();
+//        obj.year = reader.readPackedInt();
+//        obj.month = reader.readPackedInt();
+//        obj.date = reader.readPackedInt();
+//        obj.sampleCount = reader.readPackedInt();
         
         longDictionary[TIME_IDX] = 0;
         intDictionary[ID_IDX] = 0; //NOTE: this must be a reset message.
         intDictionary[MEASUREMENT_IDX] = 0;
         
         int count = obj.sampleCount; 
+        SequenceExampleA.ensureCapacity(obj, count); 
         
         final int fieldCount = 4;
         

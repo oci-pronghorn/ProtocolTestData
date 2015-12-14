@@ -13,8 +13,8 @@ public class PhastWriter {
     public static class CompressionState {
             
             public int curPos;
-            public int nextPMap;
-            public int activePMap;
+            public long nextPMap;
+            public long activePMap;
             public int runCountDown;
             
             public SequenceExampleASample[] samples;        
@@ -38,18 +38,18 @@ public class PhastWriter {
             }
             
     
-            private int buildPMap(SequenceExampleASample item) {
+            private long buildPMap(SequenceExampleASample item) {
                 //TODO: this will be generated based on object and schema.
                 try {
                  //   System.out.println("equals? "+item.id+" "+lastId);
                     
     //                 return  8|0|0|1; 
                      
-    //                
+    //                NOTE: these are ints and should be longs.
                     return Branchless.ifEquals(item.id, 1+lastId,          0, 1) |
-                       Branchless.ifZero((int)item.time,            2, 0) |
-                       Branchless.ifZero(item.measurement,          4, 0) |
-                       Branchless.ifEquals(item.action, defaultAction, 0, 8);
+                       Branchless.ifZero((int)item.time,                   2, 0) |
+                       Branchless.ifZero(item.measurement,                 4, 0) |
+                       Branchless.ifEquals(item.action, defaultAction,     0, 8);
                 }  finally {
                     lastId = item.id;
                 }
@@ -61,7 +61,7 @@ public class PhastWriter {
                 return runCountDown;
             }
             
-            public int scanAheadForNext() {
+            public long scanAheadForNext() {
                 activePMap = nextPMap;
                 runCountDown = 0;
                 while(nextPMap==activePMap && ++curPos<samples.length) {
@@ -82,11 +82,17 @@ public class PhastWriter {
     private DataOutputBlobWriter<RawDataSchema> pipeWriter;
     private PhastWriter.CompressionState state = new PhastWriter.CompressionState();
     
-    int[] intDictionary = new int[4];
-    long[] longDictionary = new long[4];
+    int[] intDictionary = new int[16];
+    long[] longDictionary = new long[16];
     
     private static final int ID_IDX = 0;
     private static final int MEASUREMENT_IDX = 1;
+    private static final int USER_IDX = 2;
+    private static final int YEAR_IDX = 3;
+    private static final int MONTH_IDX = 4;
+    private static final int DATE_IDX = 5;
+    private static final int SAMPLE_COUNT_IDX = 6;    
+    
     private static final int TIME_IDX = 0;
     
     public PhastWriter() {
@@ -112,17 +118,29 @@ public class PhastWriter {
         }
     }
 
-    public static void write(int[] intDictionary, long[] longDictionary, PhastWriter.CompressionState state, SequenceExampleA obj, DataOutputBlobWriter writer) {
+    public static void write(int[] intDictionary, long[] longDictionary, PhastWriter.CompressionState samplesPMapRLEBuilder, SequenceExampleA obj, DataOutputBlobWriter writer) {
         
         //TODO: write huffman 10 then the template position value
         //TODO: write huffman 0 then pmap and possible Run
         //TODO: Note run is optional and 0 is ok, should stop run on nested members
+
         
-        writer.writePackedInt(obj.user);
-        writer.writePackedInt(obj.year);
-        writer.writePackedInt(obj.month);
-        writer.writePackedInt(obj.date);
-        writer.writePackedInt(obj.sampleCount);
+        
+        long pmapTemplateHeader = 0; //Do we need a count on top of 1?
+        DataOutputBlobWriter.writePackedLong(writer, pmapTemplateHeader);
+        
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 1, USER_IDX, obj.user);
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 2, YEAR_IDX, obj.year);
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 4, MONTH_IDX, obj.month);
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 8, DATE_IDX, obj.date);
+        PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 16, obj.sampleCount);
+        
+        
+//        DataOutputBlobWriter.writePackedInt(writer, obj.user);          //delta   0
+//        DataOutputBlobWriter.writePackedInt(writer, obj.year);          //delta   0 
+//        DataOutputBlobWriter.writePackedInt(writer, obj.month);         //delta   0
+//        DataOutputBlobWriter.writePackedInt(writer, obj.date);          //delta   0
+//        DataOutputBlobWriter.writePackedInt(writer, obj.sampleCount);   //default 0
         
         //TODO: generated times need to have steps that are a day or so.
         
@@ -136,15 +154,13 @@ public class PhastWriter {
         
         int count = obj.sampleCount; 
         SequenceExampleASample[] samples = obj.samples;
-        state.samples = samples;
-        state.initRun();
+        samplesPMapRLEBuilder.samples = samples;
+        samplesPMapRLEBuilder.initRun();
         int runLength = 0;
         long pmapHeader = 0;
         for(int i=0; i<count; i++) {
             
             SequenceExampleASample item = samples[i];
-            
-            //TODO: urgent. need generator to build sparse array.
             
             //map
             // id - did inc vs value
@@ -154,46 +170,20 @@ public class PhastWriter {
                         
             
             if (--runLength<0) {
-                pmapHeader = state.scanAheadForNext();
-                runLength = state.runLength()-1; //sub tract one for this first usage. 
+                pmapHeader = samplesPMapRLEBuilder.scanAheadForNext();
+                runLength = samplesPMapRLEBuilder.runLength()-1; //sub tract one for this first usage. 
                 
-                writer.writePackedLong(pmapHeader);
+                DataOutputBlobWriter.writePackedLong(writer, pmapHeader);
             }
             
-            encodeIncInt(writer, pmapHeader, item.id, 1); 
-            encodeDeltaLong(longDictionary, writer, pmapHeader, TIME_IDX, 2, item.time);
-            
-            
-            
-            if (0 == (pmapHeader&4)) {
-                writer.writePackedInt(item.measurement-intDictionary[MEASUREMENT_IDX]);
-                intDictionary[MEASUREMENT_IDX] = item.measurement;
-            }
-            // writer.writePackedInt(item.measurement);
-            
-            
-            
-            if (0 != (pmapHeader&8)) {
-                writer.writePackedInt(item.action); 
-            }
-            //writer.writePackedInt(item.action); 
-            
+            PhastEncoder.encodeIntPresent(writer, pmapHeader, 1, item.id); 
+            PhastEncoder.encodeDeltaLong(longDictionary, writer, pmapHeader, TIME_IDX, 2, item.time);
+            PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapHeader, 4, MEASUREMENT_IDX, item.measurement);
+            PhastEncoder.encodeIntPresent(writer, pmapHeader, 8, item.action);
+
         }
     }
 
-    private static void encodeDeltaLong(long[] longDictionary, DataOutputBlobWriter writer, long pmapHeader, int idx,
-            int bitMask, long value) {
-        if (0 == (pmapHeader&bitMask)) {
-            writer.writePackedLong(value-longDictionary[idx]);
-            longDictionary[idx] = value;             
-        }
-    }
-
-    private static void encodeIncInt(DataOutputBlobWriter writer, long pmapHeader, int value, int bitMask) {
-        if (0 != (pmapHeader&bitMask)) {
-            writer.writePackedInt(value);
-        }
-    }
     
     
 }
