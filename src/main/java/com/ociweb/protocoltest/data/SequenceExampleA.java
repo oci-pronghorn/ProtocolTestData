@@ -21,7 +21,8 @@ public class SequenceExampleA {
     int sampleCount;
     
     SequenceExampleASample[] samples;
-    private List<SequenceExampleASample> samplesAsList = new SampleList();
+    
+    private transient List<SequenceExampleASample> samplesAsList;
 
     public String toString() {
         try {
@@ -129,6 +130,9 @@ public class SequenceExampleA {
     }
     
     public List<SequenceExampleASample> getSamples() {
+        if (null==samplesAsList) {
+            samplesAsList = new SampleList();
+        }
         return samplesAsList;
     }
 
