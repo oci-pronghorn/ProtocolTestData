@@ -10,77 +10,9 @@ import com.ociweb.pronghorn.pipe.RawDataSchema;
 
 public class PhastWriter {
 
-    public static class CompressionState {
-            
-            public int curPos;
-            public long nextPMap;
-            public long activePMap;
-            public int runCountDown;
-            
-            public SequenceExampleASample[] samples;        
-           
-            
-            public int defaultAction = 5;
-            public int lastId = 0;
-            
-            public CompressionState() {
-                
-            }
-            
-            public void initRun() {
-                curPos = 0;
-                if (0==samples.length) {
-                    nextPMap = 0;
-                    runCountDown = 0;
-                } else {
-                    nextPMap = buildPMap(samples[curPos]);
-                }
-            }
-            
-    
-            private long buildPMap(SequenceExampleASample item) {
-                //TODO: this will be generated based on object and schema.
-                try {
-                 //   System.out.println("equals? "+item.id+" "+lastId);
-                    
-    //                 return  8|0|0|1; 
-                     
-    //                NOTE: these are ints and should be longs.
-                    return Branchless.ifEquals(item.id, 1+lastId,          0, 1) |
-                       Branchless.ifZero((int)item.time,                   2, 0) |
-                       Branchless.ifZero(item.measurement,                 4, 0) |
-                       Branchless.ifEquals(item.action, defaultAction,     0, 8);
-                }  finally {
-                    lastId = item.id;
-                }
-            }
-    
-            
-            
-            public int runLength() {
-                return runCountDown;
-            }
-            
-            public long scanAheadForNext() {
-                activePMap = nextPMap;
-                runCountDown = 0;
-                while(nextPMap==activePMap && ++curPos<samples.length) {
-                    runCountDown++;//this is adding one for the previous pass not this one.
-                    nextPMap = buildPMap(samples[curPos]);  
-                }
-                
-                activePMap |= (runCountDown<<4);
-                if (activePMap < 0) {
-                    throw new UnsupportedOperationException();
-                }
-                
-                return activePMap;
-            }
-        }
-
     private Pipe<RawDataSchema> workPipe = new Pipe<RawDataSchema>(new PipeConfig<RawDataSchema>(RawDataSchema.instance, 4, 50000));
     private DataOutputBlobWriter<RawDataSchema> pipeWriter;
-    private PhastWriter.CompressionState state = new PhastWriter.CompressionState();
+    private CompressionState state = new CompressionState();
     
     int[] intDictionary = new int[16];
     long[] longDictionary = new long[16];
@@ -118,7 +50,7 @@ public class PhastWriter {
         }
     }
 
-    public static void write(int[] intDictionary, long[] longDictionary, PhastWriter.CompressionState samplesPMapRLEBuilder, SequenceExampleA obj, DataOutputBlobWriter writer) {
+    public static void write(int[] intDictionary, long[] longDictionary, CompressionState samplesPMapRLEBuilder, SequenceExampleA obj, DataOutputBlobWriter writer) {
         
         //TODO: write huffman 10 then the template position value
         //TODO: write huffman 0 then pmap and possible Run
@@ -129,11 +61,12 @@ public class PhastWriter {
         long pmapTemplateHeader = 0; //Do we need a count on top of 1?
         DataOutputBlobWriter.writePackedLong(writer, pmapTemplateHeader);
         
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 1, USER_IDX, obj.user);
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 2, YEAR_IDX, obj.year);
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 4, MONTH_IDX, obj.month);
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 8, DATE_IDX, obj.date);
-        PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 16, obj.sampleCount);
+        //first bit is zero to indicate pmap
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 2, USER_IDX, obj.user);
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 4, YEAR_IDX, obj.year);
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 8, MONTH_IDX, obj.month);
+        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 16, DATE_IDX, obj.date);
+        PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 32, obj.sampleCount);
         
         
 //        DataOutputBlobWriter.writePackedInt(writer, obj.user);          //delta   0

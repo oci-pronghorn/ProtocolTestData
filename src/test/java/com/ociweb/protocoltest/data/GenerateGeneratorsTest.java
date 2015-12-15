@@ -22,9 +22,11 @@ import com.ociweb.pronghorn.stage.PronghornStage;
 import com.ociweb.pronghorn.stage.monitor.MonitorConsoleStage;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
 import com.ociweb.pronghorn.stage.scheduling.ThreadPerStageScheduler;
+import com.ociweb.pronghorn.stage.test.ConsoleJSONDumpStage;
 import com.ociweb.pronghorn.stage.test.ConsoleSummaryStage;
 import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
 import com.ociweb.pronghorn.util.NullAppendable;
+import com.ociweb.protocoltest.data.build.SequenceExampleAFuzzGeneratorStageCustom;
 
 public class GenerateGeneratorsTest {
 
@@ -59,7 +61,7 @@ public class GenerateGeneratorsTest {
             
             factory.startup();
             
-            int count = 200000;
+            int count = 20000;
             long startTime = System.currentTimeMillis();
             
             int i = count;
@@ -117,36 +119,51 @@ public class GenerateGeneratorsTest {
         
         Class clazz = validateCleanCompile(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance);
         
-        MessageSchema schema = SequenceExampleASchema.instance;
-        int pipeLength = (1+(1<<11))*8;
+        int pipeLength = (2+(1<<11))*16;
         
-        try {
-            Constructor constructor =  LoaderUtil.generateClassConstructor(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.class);
-            
+        try {            
             
             GraphManager gm = new GraphManager();
             
             //NOTE: Since the ConsoleSummaryStage usess the HighLevel API the pipe MUST be large enough to hold and entire message
             //      Would be nice to detect this failure, not sure how.
-            Pipe<?> pipe = new Pipe<>(new PipeConfig<>(schema, pipeLength));           
+            Pipe<SequenceExampleASchema> pipe = new Pipe<SequenceExampleASchema>(new PipeConfig<SequenceExampleASchema>(SequenceExampleASchema.instance, pipeLength));           
             
-            constructor.newInstance(gm, pipe);
-            Appendable out = new NullAppendable();// PrintWriter(new ByteArrayOutputStream(2048));
+            Constructor constructor =  LoaderUtil.generateClassConstructor(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.class);
+            PronghornStage stage = (PronghornStage)constructor.newInstance(gm, pipe);
+
+      //      PronghornStage stage = new SequenceExampleAFuzzGeneratorStageCustom(gm,pipe);
+            
+            //System.out.println( stage.supportsBatchedPublish(stage) ) ;
+            //System.out.println( stage.supportsBatchedRelease(stage) ) ;
+                        
+            
+            Appendable out = new NullAppendable();
             ConsoleSummaryStage dump = new ConsoleSummaryStage(gm, pipe, out );
+
+            
+            //System.out.println( PronghornStage.supportsBatchedPublish(dump) ) ;
+            //System.out.println( PronghornStage.supportsBatchedRelease(dump) ) ;
+            
+            //ConsoleJSONDumpStage<SequenceExampleASchema> dump = new ConsoleJSONDumpStage<>(gm, pipe);
+            
             
             GraphManager.enableBatching(gm);
-            //MonitorConsoleStage.attach(gm);
+            MonitorConsoleStage.attach(gm);
             
             ThreadPerStageScheduler scheduler = new ThreadPerStageScheduler(gm);
-            scheduler.playNice=false;
+        //    scheduler.playNice=false;
             
             long startup = System.currentTimeMillis();
             scheduler.startup();
                         
-            Thread.sleep(2000);
+            Thread.sleep(4200);
             
+            //stage.requestShutdown();
+           
             scheduler.shutdown();
-            scheduler.awaitTermination(40, TimeUnit.SECONDS);
+            
+            scheduler.awaitTermination(4, TimeUnit.SECONDS);
             long durationMS = System.currentTimeMillis()-startup;//measured for better accuracy
             
             long totalMessages = dump.totalMessages();
@@ -159,19 +176,7 @@ public class GenerateGeneratorsTest {
             System.out.println("Messages per second:"+msgPerSecond);
             
             
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

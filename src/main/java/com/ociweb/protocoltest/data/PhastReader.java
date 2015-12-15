@@ -62,11 +62,11 @@ public class PhastReader {
         //TODO: need to record the header in huffman code
         
         long templateMap = reader.readPackedLong(); //this int can be RLE as well
-        obj.user = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, USER_IDX, valueZero, 1);       
-        obj.year = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, YEAR_IDX, valueZero, 2);       
-        obj.month = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, MONTH_IDX, valueZero, 4);       
-        obj.date = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, DATE_IDX, valueZero, 8);       
-        obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, 1<<11, 16);       
+        obj.user = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, USER_IDX, valueZero, 2);       
+        obj.year = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, YEAR_IDX, valueZero, 4);       
+        obj.month = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, MONTH_IDX, valueZero, 8);       
+        obj.date = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, DATE_IDX, valueZero, 16);       
+        obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, 1<<11, 32);       
         
         
 //        

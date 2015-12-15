@@ -35,13 +35,7 @@ public class Branchless {
         return (a&mask)|(b&(~mask));
     }
 
-    
-    
-
-    //TODO: refactor all these as static method calls to simplify this generated file.
-
-    
-    
+        
     
     
 }
