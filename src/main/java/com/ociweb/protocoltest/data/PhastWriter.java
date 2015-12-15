@@ -52,10 +52,14 @@ public class PhastWriter {
 
     public static void write(int[] intDictionary, long[] longDictionary, CompressionState samplesPMapRLEBuilder, SequenceExampleA obj, DataOutputBlobWriter writer) {
         
-        //TODO: write huffman 10 then the template position value
-        //TODO: write huffman 0 then pmap and possible Run
-        //TODO: Note run is optional and 0 is ok, should stop run on nested members
-
+        //First (low) bits:
+        // 0 <PMAP>
+        // 10 <TemplateIDX Position>
+        // 110 <Reset step count>
+        // 1110 <?? template ID>
+        
+        int msgIdx = 0; //template
+        DataOutputBlobWriter.writePackedInt(writer, (msgIdx<<2)|2);
         
         
         long pmapTemplateHeader = 0; //Do we need a count on top of 1?
@@ -68,12 +72,6 @@ public class PhastWriter {
         PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 16, DATE_IDX, obj.date);
         PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 32, obj.sampleCount);
         
-        
-//        DataOutputBlobWriter.writePackedInt(writer, obj.user);          //delta   0
-//        DataOutputBlobWriter.writePackedInt(writer, obj.year);          //delta   0 
-//        DataOutputBlobWriter.writePackedInt(writer, obj.month);         //delta   0
-//        DataOutputBlobWriter.writePackedInt(writer, obj.date);          //delta   0
-//        DataOutputBlobWriter.writePackedInt(writer, obj.sampleCount);   //default 0
         
         //TODO: generated times need to have steps that are a day or so.
         
@@ -109,10 +107,10 @@ public class PhastWriter {
                 DataOutputBlobWriter.writePackedLong(writer, pmapHeader);
             }
             
-            PhastEncoder.encodeIntPresent(writer, pmapHeader, 1, item.id); 
-            PhastEncoder.encodeDeltaLong(longDictionary, writer, pmapHeader, TIME_IDX, 2, item.time);
-            PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapHeader, 4, MEASUREMENT_IDX, item.measurement);
-            PhastEncoder.encodeIntPresent(writer, pmapHeader, 8, item.action);
+            PhastEncoder.encodeIntPresent(writer, pmapHeader, 2, item.id); 
+            PhastEncoder.encodeDeltaLong(longDictionary, writer, pmapHeader, TIME_IDX, 4, item.time);
+            PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapHeader, 8, MEASUREMENT_IDX, item.measurement);
+            PhastEncoder.encodeIntPresent(writer, pmapHeader, 16, item.action);
 
         }
     }

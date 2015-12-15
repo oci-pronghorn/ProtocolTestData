@@ -36,6 +36,10 @@ public class SequenceExampleA {
         return (5*4)+(sampleCount*SequenceExampleASample.estimatedBytes());
     }
     
+    public static long estimatedBytes(int sampleCount) {
+        return (5*4)+(sampleCount*SequenceExampleASample.estimatedBytes());
+    }
+    
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof SequenceExampleA) {

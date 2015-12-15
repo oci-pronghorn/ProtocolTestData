@@ -6,6 +6,7 @@ public class CompressionState {
         public long nextPMap;
         public long activePMap;
         public int runCountDown;
+        public final static int RUN_SHIFT = 5;//fields +1
         
         public SequenceExampleASample[] samples;        
        
@@ -31,15 +32,11 @@ public class CompressionState {
         private long buildPMap(SequenceExampleASample item) {
             //TODO: this will be generated based on object and schema.
             try {
-             //   System.out.println("equals? "+item.id+" "+lastId);
-                
-//                 return  8|0|0|1; 
-                 
 //                NOTE: these are ints and should be longs.
-                return Branchless.ifEquals(item.id, 1+lastId,          0, 1) |
-                   Branchless.ifZero((int)item.time,                   2, 0) |
-                   Branchless.ifZero(item.measurement,                 4, 0) |
-                   Branchless.ifEquals(item.action, defaultAction,     0, 8);
+                return Branchless.ifEquals(item.id, 1+lastId,          0, 2) |
+                   Branchless.ifZero((int)item.time,                   4, 0) |
+                   Branchless.ifZero(item.measurement,                 8, 0) |
+                   Branchless.ifEquals(item.action, defaultAction,     0, 16);
             }  finally {
                 lastId = item.id;
             }
@@ -59,7 +56,7 @@ public class CompressionState {
                 nextPMap = buildPMap(samples[curPos]);  
             }
             
-            activePMap |= (runCountDown<<4);
+            activePMap |= (runCountDown << RUN_SHIFT);
             if (activePMap < 0) {
                 throw new UnsupportedOperationException();
             }

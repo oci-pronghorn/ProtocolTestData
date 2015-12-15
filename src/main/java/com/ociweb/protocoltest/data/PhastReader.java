@@ -59,7 +59,8 @@ public class PhastReader {
 
     public static void read(int[] intDictionary, long[] longDictionary, SequenceExampleA obj, DataInputBlobReader reader) {
                 
-        //TODO: need to record the header in huffman code
+        int templateId = reader.readPackedInt();
+        int msgIdx = templateId>>2;
         
         long templateMap = reader.readPackedLong(); //this int can be RLE as well
         obj.user = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, USER_IDX, valueZero, 2);       
@@ -69,13 +70,6 @@ public class PhastReader {
         obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, 1<<11, 32);       
         
         
-//        
-//        obj.user = reader.readPackedInt();
-//        obj.year = reader.readPackedInt();
-//        obj.month = reader.readPackedInt();
-//        obj.date = reader.readPackedInt();
-//        obj.sampleCount = reader.readPackedInt();
-        
         longDictionary[TIME_IDX] = 0;
         intDictionary[ID_IDX] = 0; //NOTE: this must be a reset message.
         intDictionary[MEASUREMENT_IDX] = 0;
@@ -83,24 +77,22 @@ public class PhastReader {
         int count = obj.sampleCount; 
         SequenceExampleA.ensureCapacity(obj, count); 
         
-        final int fieldCount = 4;
-        
         int runCount = 0;
         long map = 0;
         for(int i=0; i<count; i++) {            
             
             if (--runCount < 0) {
                 map = reader.readPackedLong();
-                runCount = (int)(map>>fieldCount);
+                runCount = (int)(map >> CompressionState.RUN_SHIFT);
                 runCount--; //for this usage;
             }
             
             SequenceExampleASample item = obj.samples[i];
             
-            item.id = PhastDecoder.decodeIncInt(intDictionary, reader, map, ID_IDX, 1);            
-            item.time = PhastDecoder.decodeDeltaLong(longDictionary, reader, map, TIME_IDX, timeZero, 2);
-            item.measurement = PhastDecoder.decodeDeltaInt(intDictionary, reader, map, MEASUREMENT_IDX, valueZero, 4);           
-            item.action =  PhastDecoder.decodeDefaultInt(reader, map, defaultAction, 8);
+            item.id = PhastDecoder.decodeIncInt(intDictionary, reader, map, ID_IDX, 2);            
+            item.time = PhastDecoder.decodeDeltaLong(longDictionary, reader, map, TIME_IDX, timeZero, 4);
+            item.measurement = PhastDecoder.decodeDeltaInt(intDictionary, reader, map, MEASUREMENT_IDX, valueZero, 8);           
+            item.action =  PhastDecoder.decodeDefaultInt(reader, map, defaultAction, 16);
             
         }
         
