@@ -32,6 +32,8 @@ public class CompressionState {
         private long buildPMap(SequenceExampleASample item) {
             //TODO: this will be generated based on object and schema.
             try {
+//                return 2|0|0|16;
+                
 //                NOTE: these are ints and should be longs.
                 return Branchless.ifEquals(item.id, 1+lastId,          0, 2) |
                    Branchless.ifZero((int)item.time,                   4, 0) |

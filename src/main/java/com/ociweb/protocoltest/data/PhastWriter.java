@@ -63,13 +63,35 @@ public class PhastWriter {
         
         
         long pmapTemplateHeader = 0; //Do we need a count on top of 1?
+
+        
+        if (intDictionary[YEAR_IDX] != obj.year) {
+            pmapTemplateHeader |= 4;
+        }
+        if (intDictionary[MONTH_IDX] != obj.month) {
+            pmapTemplateHeader |= 8;
+        }
+        if ((1+intDictionary[DATE_IDX]) != obj.date) {
+            pmapTemplateHeader |= 16;
+        }
+        
+        
+        
         DataOutputBlobWriter.writePackedLong(writer, pmapTemplateHeader);
         
         //first bit is zero to indicate pmap
+                
         PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 2, USER_IDX, obj.user);
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 4, YEAR_IDX, obj.year);
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 8, MONTH_IDX, obj.month);
-        PhastEncoder.encodeDeltaInt(intDictionary, writer, pmapTemplateHeader, 16, DATE_IDX, obj.date);
+        
+        PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 4,  obj.year);
+        PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 8,  obj.month);
+        PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 16,  obj.date);
+
+        intDictionary[YEAR_IDX]= obj.year;
+        intDictionary[MONTH_IDX]=obj.month;
+        intDictionary[DATE_IDX]=obj.date;
+        
+        
         PhastEncoder.encodeIntPresent(writer, pmapTemplateHeader, 32, obj.sampleCount);
         
         

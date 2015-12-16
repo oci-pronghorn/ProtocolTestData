@@ -64,9 +64,18 @@ public class PhastReader {
         
         long templateMap = reader.readPackedLong(); //this int can be RLE as well
         obj.user = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, USER_IDX, valueZero, 2);       
-        obj.year = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, YEAR_IDX, valueZero, 4);       
-        obj.month = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, MONTH_IDX, valueZero, 8);       
-        obj.date = PhastDecoder.decodeDeltaInt(intDictionary, reader, templateMap, DATE_IDX, valueZero, 16);       
+             
+        
+      //  System.out.println(Long.toBinaryString(templateMap));
+        
+        obj.year = PhastDecoder.decodeCopyInt(intDictionary, reader, templateMap, YEAR_IDX, 4);       
+        intDictionary[YEAR_IDX]= obj.year;
+        obj.month = PhastDecoder.decodeCopyInt(intDictionary, reader, templateMap, MONTH_IDX, 8);       
+        intDictionary[MONTH_IDX]=obj.month;
+        obj.date = PhastDecoder.decodeIncInt(intDictionary, reader, templateMap, DATE_IDX, 16);  
+        //no need to set inc does it inside call        
+                
+        
         obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, 1<<11, 32);       
         
         

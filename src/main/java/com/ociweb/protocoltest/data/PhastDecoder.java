@@ -23,4 +23,11 @@ public class PhastDecoder {
         return intDictionary[idx]++;
     }
 
+    static int decodeCopyInt(int[] intDictionary, DataInputBlobReader reader, long map, int idx, int bitMask) {
+        if (0!=(map&bitMask)) {
+            intDictionary[idx] = DataInputBlobReader.readPackedInt(reader);
+        }
+        return intDictionary[idx];
+    }
+    
 }
