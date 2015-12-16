@@ -6,7 +6,8 @@ public class PhastEncoder {
 
     static void encodeIntPresent(DataOutputBlobWriter writer, long pmapHeader, int bitMask, int value) {
         if (0 != (pmapHeader&bitMask)) {
-            DataOutputBlobWriter.writePackedInt(writer, value); 
+            DataOutputBlobWriter.writePackedUInt(writer, value);
+           // DataOutputBlobWriter.writePackedInt(writer, value); 
         }
     }
 

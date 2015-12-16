@@ -82,6 +82,7 @@ public class PhastReader {
         for(int i=0; i<count; i++) {            
             
             if (--runCount < 0) {
+                int fragmentId = reader.readPackedInt();
                 map = reader.readPackedLong();
                 runCount = (int)(map >> CompressionState.RUN_SHIFT);
                 runCount--; //for this usage;

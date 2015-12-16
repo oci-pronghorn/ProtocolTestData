@@ -93,8 +93,13 @@ public class SequenceExampleA {
         that.year = year;
         that.month = month;
         that.date = date;
-        that.sampleCount = sampleCount;
-        ensureCapacity(that,sampleCount);
+        if (sampleCount>that.sampleCount) {
+            that.sampleCount = sampleCount;
+            ensureCapacity(that,sampleCount);            
+        } else {        
+            that.sampleCount = sampleCount;
+        }
+        
     }
     
     public int getUser() {
@@ -151,6 +156,7 @@ public class SequenceExampleA {
         
         
         if (null==that.samples || that.samples.length<sampleCount) {
+            
             if (sampleCount==0) {
                 sampleCount = 1;
             }

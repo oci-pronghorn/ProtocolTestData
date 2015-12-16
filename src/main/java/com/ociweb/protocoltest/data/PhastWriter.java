@@ -104,6 +104,7 @@ public class PhastWriter {
                 pmapHeader = samplesPMapRLEBuilder.scanAheadForNext();
                 runLength = samplesPMapRLEBuilder.runLength()-1; //sub tract one for this first usage. 
                 
+                DataOutputBlobWriter.writePackedInt(writer, 6);//fragmentIdx;
                 DataOutputBlobWriter.writePackedLong(writer, pmapHeader);
             }
             
