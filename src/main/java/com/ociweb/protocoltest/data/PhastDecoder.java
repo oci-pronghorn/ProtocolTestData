@@ -17,17 +17,20 @@ public class PhastDecoder {
     }
 
     static int decodeIncInt(int[] intDictionary, DataInputBlobReader reader, long map, int idx, int bitMask) {
-        if (0!=(map&bitMask)) {
+        if (0==(map&bitMask)) { //always favor the more common zero case
+            return intDictionary[idx]++; 
+        } else {
             intDictionary[idx] = DataInputBlobReader.readPackedInt(reader);
+            return intDictionary[idx]++;
         }
-        return intDictionary[idx]++;
     }
 
     static int decodeCopyInt(int[] intDictionary, DataInputBlobReader reader, long map, int idx, int bitMask) {
-        if (0!=(map&bitMask)) {
-            intDictionary[idx] = DataInputBlobReader.readPackedInt(reader);
+        if (0==(map&bitMask)) {
+            return intDictionary[idx];//always favor the more common zero case
+        } else {
+            return intDictionary[idx] = DataInputBlobReader.readPackedInt(reader);
         }
-        return intDictionary[idx];
     }
     
 }
