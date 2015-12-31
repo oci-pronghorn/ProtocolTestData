@@ -31,6 +31,11 @@ private int workingIdx;
 private final long BUILD_TIME = 1450200779804L;
 private static final int DO_NOTHING = -3;
 
+private static final boolean reUse = false;
+private static final int sizeBits = 5; //use 14 with reUse set this to large value and re-send when null;
+private static final int size = 1<<sizeBits;
+private static final int mask = size-1;
+
 @Override
 public void run() {
     
@@ -53,7 +58,7 @@ private void processDaySummary() {
 }
 
 private void processPipe1WriteDaySummary( int pUser,int pYear,int pMonth,int pDate,int pSamplesCount) {
-    workingIdx = 0x1F & (1+workingIdx);
+    workingIdx = mask & (1+workingIdx);
     SequenceExampleA.setAll(working[workingIdx],  pUser,pYear,pMonth,pDate,pSamplesCount);
 
     LowLevelStateManager.processGroupLength(navState, 0, pSamplesCount);
@@ -91,7 +96,7 @@ public void startup() {
     navState = new LowLevelStateManager(SequenceExampleASchema.FROM);
 }
 public SequenceExampleA[] buildWorkspace() {
-    int i = 32;
+    int i = size;
     SequenceExampleA[] working = new SequenceExampleA[i];
     while(--i>=0) {
         working[i] = new SequenceExampleA();
@@ -99,6 +104,12 @@ public SequenceExampleA[] buildWorkspace() {
     return working;
 }
 public SequenceExampleA nextObject(){
+    if (reUse) {
+        if (working[workingIdx].getSampleCount()>0) {
+            return working[workingIdx];
+        }
+    }
+    
     do {
         run();
     } while (!LowLevelStateManager.isStartNewMessage(navState));

@@ -23,6 +23,7 @@ public class PhastEncoder {
     static void encodeDeltaLong(long[] longDictionary, DataOutputBlobWriter writer, long pmapHeader, int idx,
             int bitMask, long value) {
         if (0 == (pmapHeader&bitMask)) {
+            
             DataOutputBlobWriter.writePackedLong(writer, value-longDictionary[idx]);
             longDictionary[idx] = value;             
         }
