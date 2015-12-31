@@ -76,7 +76,7 @@ public class PhastReader {
         //no need to set inc does it inside call        
                 
         
-        obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, 1<<11, 32);       
+        obj.sampleCount = PhastDecoder.decodeDefaultInt(reader, templateMap, SequenceExampleASchema.FIXED_SAMPLE_COUNT, 32);       
         
         
         longDictionary[TIME_IDX] = 0;

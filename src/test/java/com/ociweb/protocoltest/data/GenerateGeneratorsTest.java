@@ -50,7 +50,7 @@ public class GenerateGeneratorsTest {
     public void generateSequenceExampleA() {
         
         StringBuilder target = new StringBuilder();
-        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null, 11);
+        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null);
 
         try {
             ew.processSchema();
@@ -118,9 +118,9 @@ public class GenerateGeneratorsTest {
         
         StringBuilder target = new StringBuilder();
         
-        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target, 11);
+        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target);
 
-        long estMsgSize = SequenceExampleA.estimatedBytes(1<<11);
+        long estMsgSize = SequenceExampleA.estimatedBytes(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         
         try {
             ew.processSchema();
@@ -134,7 +134,7 @@ public class GenerateGeneratorsTest {
         
         Class clazz = validateCleanCompile(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance);
         
-        int pipeLength = (2+(1<<11))*160;
+        int pipeLength = (2+(SequenceExampleASchema.FIXED_SAMPLE_COUNT))*160;
         
         try {            
             
@@ -253,9 +253,9 @@ public class GenerateGeneratorsTest {
         
         StringBuilder target = new StringBuilder();
         
-        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target, 11);
+        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target);
 
-        long estMsgSize = SequenceExampleA.estimatedBytes(1<<11);
+        long estMsgSize = SequenceExampleA.estimatedBytes(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         
         try {
             ew.processSchema();
@@ -269,7 +269,7 @@ public class GenerateGeneratorsTest {
         
         Class clazz = validateCleanCompile(ew.getPackageName(), ew.getClassName(), target, SequenceExampleASchema.instance);
         
-        int pipeLength = (2+(1<<11))*160;
+        int pipeLength = (2+(SequenceExampleASchema.FIXED_SAMPLE_COUNT))*160;
         
         try {            
             

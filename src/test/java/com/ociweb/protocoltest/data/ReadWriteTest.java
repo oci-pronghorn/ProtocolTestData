@@ -53,7 +53,7 @@ public class ReadWriteTest {
         try {
             if (null==generatedClass) {
                 StringBuilder target = new StringBuilder();
-                FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null, 11);
+                FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null);
                     
                 try {
                     ew.processSchema();
@@ -198,7 +198,7 @@ public class ReadWriteTest {
                     
             
             SequenceExampleA target = new SequenceExampleA();
-            SequenceExampleA.ensureCapacity(target, 1<<11);
+            SequenceExampleA.ensureCapacity(target,SequenceExampleASchema.FIXED_SAMPLE_COUNT);
             
             PhastReader pReader = new PhastReader();
             

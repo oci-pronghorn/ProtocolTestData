@@ -18,7 +18,7 @@ public class SequenceExampleAPopulationFactory extends SequenceExampleAFactory {
     @Override
     public void startup() {
         target = new SequenceExampleA();
-        target.ensureCapacity(target, 1<<11);
+        target.ensureCapacity(target, SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         navState = new LowLevelStateManager(SequenceExampleASchema.FROM);
         
         assert(0==Pipe.getReleaseBatchSize(input));
@@ -29,7 +29,7 @@ public class SequenceExampleAPopulationFactory extends SequenceExampleAFactory {
     public void run() {
         
         
-        while (!Pipe.hasContentToRead(input,7+(6<<11))) {
+        while (!Pipe.hasContentToRead(input,7+(6*SequenceExampleASchema.FIXED_SAMPLE_COUNT))) {
             Thread.yield();
         }
             
@@ -65,7 +65,7 @@ public class SequenceExampleAPopulationFactory extends SequenceExampleAFactory {
             
         } while (!LowLevelStateManager.isStartNewMessage(navState));
         
-        Pipe.confirmLowLevelRead(input, 7 + (6<<11));   
+        Pipe.confirmLowLevelRead(input, 7 + (6*SequenceExampleASchema.FIXED_SAMPLE_COUNT));   
         Pipe.batchedReleasePublish(input, Pipe.getWorkingBlobRingTailPosition(input), Pipe.getWorkingTailPosition(input));
                    
            

@@ -81,7 +81,7 @@ public class SequenceExampleA {
         Appendables.appendValue(target,"Date:" ,date,"\n");
         Appendables.appendValue(target,"SampleCount:",sampleCount,"\n");
         
-        for(int i=0; i< 3/*sampleCount*/; i++) {
+        for(int i=0; i< sampleCount; i++) {
             target.append("----------------\n");
             samples[i].appendToString(target);
         }

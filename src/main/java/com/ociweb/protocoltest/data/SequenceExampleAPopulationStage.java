@@ -44,7 +44,7 @@ public class SequenceExampleAPopulationStage extends PronghornStage {
         if (usingFactory) {
             return;
         }
-        while (Pipe.hasContentToRead(input,7+(6<<11))) {
+        while (Pipe.hasContentToRead(input,7+(6*SequenceExampleASchema.FIXED_SAMPLE_COUNT))) {
             
             int cursor = LowLevelStateManager.isStartNewMessage(navState) ? Pipe.takeMsgIdx(input) : LowLevelStateManager.activeCursor(navState);
             
@@ -76,7 +76,7 @@ public class SequenceExampleAPopulationStage extends PronghornStage {
             }
             
             if (LowLevelStateManager.isStartNewMessage(navState)) {
-                Pipe.confirmLowLevelRead(input, 7 + (6<<11));   
+                Pipe.confirmLowLevelRead(input, 7 + (6*SequenceExampleASchema.FIXED_SAMPLE_COUNT));   
             }
             
            

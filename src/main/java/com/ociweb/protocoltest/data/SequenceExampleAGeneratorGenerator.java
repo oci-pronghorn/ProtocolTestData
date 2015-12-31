@@ -16,10 +16,10 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
     private final static int    WORKING_SIZE = 1<<WORKING_BITS;
     private final static int    WORKING_MASK = WORKING_SIZE-1;
     
-    public SequenceExampleAGeneratorGenerator(Appendable target, int seqCountBits) {
+    public SequenceExampleAGeneratorGenerator(Appendable target) {
         super(SequenceExampleASchema.instance, target, false, false);
         
-        setFixedSequenceLength(2048);
+        setFixedSequenceLength(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         setTimeFieldId(204);
         setIncFieldId(203);
         setSmallFieldId(206);
@@ -31,10 +31,10 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
     }
     
     //  
-    public SequenceExampleAGeneratorGenerator(Appendable target, Object ignore, int seqCountBits) {
+    public SequenceExampleAGeneratorGenerator(Appendable target, Object ignore) {
         super(SequenceExampleASchema.instance, target, "extends SequenceExampleAFactory", false);
         
-        setFixedSequenceLength(2048);
+        setFixedSequenceLength(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         setTimeFieldId(204);
         setIncFieldId(203);
         setSmallFieldId(206);

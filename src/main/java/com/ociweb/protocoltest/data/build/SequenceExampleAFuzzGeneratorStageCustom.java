@@ -52,7 +52,7 @@ private int nextMessageIdx() {//make private!!!
 public void run() {
     
     
-    if (Pipe.hasRoomForWrite(output, 7+(6<<11))) {
+    if (Pipe.hasRoomForWrite(output, 7+(6*SequenceExampleASchema.FIXED_SAMPLE_COUNT))) {
       if (LowLevelStateManager.isStartNewMessage(navState) ) {
           Pipe.addMsgIdx(output,nextMessageIdx());
           processDaySummary();
@@ -75,7 +75,7 @@ public void run() {
             Pipe.writeTrailingCountOfBytesConsumed(output, Pipe.getWorkingHeadPositionObject(output).value++); //increment because this is the low-level API calling
             
       } while (!LowLevelStateManager.isStartNewMessage(navState));
-      Pipe.confirmLowLevelWrite(output, 7+(6<<11));
+      Pipe.confirmLowLevelWrite(output, 7+(6*SequenceExampleASchema.FIXED_SAMPLE_COUNT));
       Pipe.publishWritesBatched(output);
       
     }
@@ -131,7 +131,7 @@ private void processDaySummary() {
         (0xFFF & (mA += 23)),
         (0xFFF & (m9 += 19)),
         (0xFFF & (m8 += 17)),
-        0x800, output, navState
+        SequenceExampleASchema.FIXED_SAMPLE_COUNT, output, navState
     );
 }
 
@@ -149,7 +149,7 @@ private void processPipe1WriteDaySummary( int pUser,int pYear,int pMonth,int pDa
 
 private void processDaySummarySamples() {
     processPipe1WriteDaySummarySamples(
-        (0x7FF & (m6 += 1)),
+        ((SequenceExampleASchema.FIXED_SAMPLE_COUNT-1) & (m6 += 1)),
         (0x7FFFFFFFFFFFFFFFL & (m5 += 43200000)),
         (0xFFF & (m4 += 11)),
         (0x7 & (m3 += 7)), output, navState

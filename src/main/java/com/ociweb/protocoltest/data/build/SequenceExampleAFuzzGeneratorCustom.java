@@ -31,8 +31,8 @@ private int workingIdx;
 private final long BUILD_TIME = 1450200779804L;
 private static final int DO_NOTHING = -3;
 
-private static final boolean reUse = false;
-private static final int sizeBits = 5; //use 14 with reUse set this to large value and re-send when null;
+private static final boolean reUse = true;
+private static final int sizeBits = 14; //use with reUse set this to large value and re-send when null; (was 5)
 private static final int size = 1<<sizeBits;
 private static final int mask = size-1;
 
@@ -53,7 +53,7 @@ private void processDaySummary() {
         2015+((m15 += 1) >> 9 ),
         (1+ (0xF&((m14 += 1) >> 5) ) ),
         1+(31 & (m13 += 1)),
-        0x800
+        SequenceExampleASchema.FIXED_SAMPLE_COUNT
     );
 }
 
@@ -66,7 +66,7 @@ private void processPipe1WriteDaySummary( int pUser,int pYear,int pMonth,int pDa
 
 private void processDaySummarySamples() {
     processPipe1WriteDaySummarySamples(
-        (0x7FF & (m11 += 1)),
+        ((SequenceExampleASchema.FIXED_SAMPLE_COUNT-1) & (m11 += 1)),
         (0x7FFFFFFFFFFFFFFFL & (m10 +=  43200000)),
         (0xFFF & (mF += 43)),
         ((15 & (mE += 41))<14) ? 5 : 0
