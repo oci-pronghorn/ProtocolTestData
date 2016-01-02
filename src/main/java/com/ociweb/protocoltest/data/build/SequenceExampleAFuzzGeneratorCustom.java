@@ -42,9 +42,9 @@ public void run() {
       if (LowLevelStateManager.isStartNewMessage(navState) ) {
           processDaySummary();
       }               
-      do {
+      while (!LowLevelStateManager.isStartNewMessage(navState)) {
            processDaySummarySamples(); 
-      } while (!LowLevelStateManager.isStartNewMessage(navState));
+      }
 }
 
 private void processDaySummary() {
@@ -74,8 +74,8 @@ private void processDaySummarySamples() {
 }
 
 private void processPipe1WriteDaySummarySamples( int pId,long pTime,int pMeasurement,int pAction) {
-    SequenceExampleA.setSample(working[workingIdx], LowLevelStateManager.interationIndex(navState), pId,pTime,pMeasurement,pAction);
     if (!LowLevelStateManager.closeSequenceIteration(navState)) {
+        SequenceExampleA.setSample(working[workingIdx], LowLevelStateManager.interationIndex(navState), pId,pTime,pMeasurement,pAction);
         return; /* Repeat this fragment*/
     }
     LowLevelStateManager.closeFragment(navState);

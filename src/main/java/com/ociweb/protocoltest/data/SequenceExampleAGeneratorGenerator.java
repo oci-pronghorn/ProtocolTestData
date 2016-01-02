@@ -15,10 +15,11 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
     private final static int    WORKING_BITS = 5;
     private final static int    WORKING_SIZE = 1<<WORKING_BITS;
     private final static int    WORKING_MASK = WORKING_SIZE-1;
+    private final boolean usesObjects;
     
     public SequenceExampleAGeneratorGenerator(Appendable target) {
         super(SequenceExampleASchema.instance, target, false, false);
-        
+        usesObjects = false;
         setFixedSequenceLength(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         setTimeFieldId(204);
         setIncFieldId(203);
@@ -33,7 +34,7 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
     //  
     public SequenceExampleAGeneratorGenerator(Appendable target, Object ignore) {
         super(SequenceExampleASchema.instance, target, "extends SequenceExampleAFactory", false);
-        
+        usesObjects = true;
         setFixedSequenceLength(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         setTimeFieldId(204);
         setIncFieldId(203);
@@ -118,19 +119,19 @@ public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
         } else {
             if (cursor < SequenceExampleASchema.FROM.tokensLen-1) {
                 
-                
-                //start of the one and only sequence for this example
-                
-                Appendables.appendStaticCall(target.append(tab), SequenceExampleA.class, "setSample").append(WORKING_SPACE).append("[").append(WORKING_IDX).append("]").append(", ");
-                
-                //Need count?
-                //LowLevelStageManager.interationIndex(navState);
-                
-                //   SequenceExampleA.setSample(obj, idx, id, time, measurement, action);
-                Appendables.appendStaticCall(target, LowLevelStateManager.class, "interationIndex").append(stageMgrVarName).append("),");
-                Appendables.appendAndSkip(target, Appendables.appendAndSkip(new StringBuilder(), argSignature, "long ")  , "int ");
-                target.append(");\n");
-                                
+                if (usesObjects) {
+                    //start of the one and only sequence for this example
+                    
+                    //   SequenceExampleA.setSample(obj, idx, id, time, measurement, action);
+                    Appendables.appendStaticCall(target.append(tab), SequenceExampleA.class, "setSample").append(WORKING_SPACE).append("[").append(WORKING_IDX).append("]").append(", ");
+                    
+                    //Need count?
+                    //LowLevelStageManager.interationIndex(navState);
+                    
+                    Appendables.appendStaticCall(target, LowLevelStateManager.class, "interationIndex").append(stageMgrVarName).append("),");
+                    Appendables.appendAndSkip(target, Appendables.appendAndSkip(new StringBuilder(), argSignature, "long ")  , "int ");
+                    target.append(");\n");
+                }
             }        
         
         } 

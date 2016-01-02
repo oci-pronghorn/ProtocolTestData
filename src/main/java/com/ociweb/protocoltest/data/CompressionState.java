@@ -20,7 +20,7 @@ public class CompressionState {
         
         public void initRun() {
             curPos = 0;
-            if (0==samples.length) {
+            if (null==samples || 0==samples.length) {
                 nextPMap = 0;
                 runCountDown = 0;
             } else {
