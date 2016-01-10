@@ -212,7 +212,7 @@ public class ReadWriteTest {
                 while (regulator.hasNextChunk() && --i>=0) {
                         lastNow = recordLatency(lastNow, h, reader);     
                     
-                        SequenceExampleA result = PhastReader.readFromInputStream(pReader, target, (InputStream) reader);
+                        SequenceExampleA result = PhastReader.readFromInputStream(pReader, target);
                        
                         
                         if(!result.equals(nextObject)) {

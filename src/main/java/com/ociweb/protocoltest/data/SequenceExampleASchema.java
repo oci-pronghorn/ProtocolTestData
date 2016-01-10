@@ -17,7 +17,7 @@ public class SequenceExampleASchema extends MessageSchema {
     
     public final static SequenceExampleASchema instance = new SequenceExampleASchema();
     
-    public final static int FIXED_SAMPLE_COUNT = 1;///1;///2048;//1;//2048; //MUST BE 1 << (SOME X)
+    public final static int FIXED_SAMPLE_COUNT = 1536;//0;///1;///2048;//1;//2048; //MUST BE 1 << (SOME X)
     
     private SequenceExampleASchema() {
         super(FROM);

@@ -35,16 +35,15 @@ public class PhastWriter {
     public static  void writeToOuputStream(PhastWriter writer, SequenceExampleA nextObject, OutputStream out) {
         Pipe.addMsgIdx(writer.workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1);
         writer.pipeWriter.openField();
-        
-        PhastWriter.write(writer.intDictionary, writer.longDictionary, writer.state, nextObject, writer.pipeWriter);   
-        
+        PhastWriter.write(writer.intDictionary, writer.longDictionary, writer.state, nextObject, writer.pipeWriter);
         writer.pipeWriter.closeLowLevelField();
-        Pipe.confirmLowLevelWrite(writer.workPipe, Pipe.sizeOf(writer.workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1));//not sure needed when I am both threads
-        Pipe.publishWrites(writer.workPipe);                    
+        Pipe.publishWrites(writer.workPipe);
+        Pipe.publishAllBatchedWrites(writer.workPipe); 
+        
         try {
             Pipe.takeMsgIdx(writer.workPipe);
             Pipe.writeFieldToOutputStream(writer.workPipe, out);
-            Pipe.releaseReads(writer.workPipe);
+            Pipe.releaseReadLock(writer.workPipe);
         } catch (IOException e) {
            throw new RuntimeException(e);
         }

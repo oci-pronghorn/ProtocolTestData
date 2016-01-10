@@ -13,6 +13,7 @@ import com.ociweb.pronghorn.util.Appendables;
 public class SequenceExampleA {
 
     private final static Logger log = LoggerFactory.getLogger(SequenceExampleA.class);
+    private final static SequenceExampleASample[] DEFAULT_EMPTY = new SequenceExampleASample[0];
     
     int user;
     int year;
@@ -20,7 +21,7 @@ public class SequenceExampleA {
     int date;
     int sampleCount;
     
-    SequenceExampleASample[] samples;
+    SequenceExampleASample[] samples = DEFAULT_EMPTY;
     
     private transient List<SequenceExampleASample> samplesAsList;
 

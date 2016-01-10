@@ -10,7 +10,7 @@ import com.ociweb.pronghorn.pipe.RawDataSchema;
 
 public class PhastReader {
 
-    private Pipe<RawDataSchema> workPipe = new Pipe<RawDataSchema>(new PipeConfig<RawDataSchema>(RawDataSchema.instance, 4, 50000));
+    private Pipe<RawDataSchema> workPipe = new Pipe<RawDataSchema>(new PipeConfig<RawDataSchema>(RawDataSchema.instance, 4, 500000));
     private DataInputBlobReader<RawDataSchema> pipeReader;
     
     
@@ -36,24 +36,31 @@ public class PhastReader {
         pipeReader = new DataInputBlobReader<RawDataSchema>(workPipe);  
     }
     
-    public static SequenceExampleA readFromInputStream(PhastReader reader, SequenceExampleA targetObject, InputStream in) {
-        try {
-        
-         Pipe.addMsgIdx(reader.workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1);            
-         Pipe.readFieldFromInputStream(reader.workPipe, in, in.available());            
-         Pipe.confirmLowLevelWrite(reader.workPipe, Pipe.sizeOf(reader.workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1));//not sure needed when I am both threads
-         Pipe.publishWrites(reader.workPipe);                    
-        
+    public static SequenceExampleA readFromInputStream(PhastReader reader, SequenceExampleA targetObject) {
          
-         Pipe.takeMsgIdx(reader.workPipe);                
-         reader.pipeReader.openLowLevelAPIField();
          PhastReader.read(reader.intDictionary, reader.longDictionary, targetObject, reader.pipeReader); 
-         Pipe.releaseReads(reader.workPipe);
          
          return targetObject;
          
+    }
+
+    public static void releaseStream(PhastReader reader) {
+        Pipe.releaseReadLock(reader.workPipe);        
+    }
+    
+    public static void fetchStreamIntoPipe(PhastReader reader, InputStream in)  {
+        try {
+             Pipe.addMsgIdx(reader.workPipe, RawDataSchema.MSG_CHUNKEDSTREAM_1);            
+             Pipe.readFieldFromInputStream(reader.workPipe, in, in.available());            
+             Pipe.publishWrites(reader.workPipe);                    
+             Pipe.publishAllBatchedWrites(reader.workPipe);
+             
+             //Now open this for use
+             Pipe.takeMsgIdx(reader.workPipe);                
+             reader.pipeReader.openLowLevelAPIField();
+             
         } catch (IOException e) {
-           throw new RuntimeException(e);
+            throw new RuntimeException(e);
         }        
     }
 
