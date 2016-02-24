@@ -3,10 +3,10 @@ package com.ociweb.protocoltest.data;
 import java.io.IOException;
 
 import com.ociweb.pronghorn.pipe.stream.LowLevelStateManager;
-import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
+import com.ociweb.pronghorn.stage.generator.FuzzDataStageGenerator;
 import com.ociweb.pronghorn.util.Appendables;
 
-public class SequenceExampleAGeneratorGenerator extends FuzzGeneratorGenerator {
+public class SequenceExampleAGeneratorGenerator extends FuzzDataStageGenerator {
 
     private final static String WORKING_SPACE = "working";
     private final static String WORKING_IDX   = "workingIdx";

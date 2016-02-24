@@ -25,7 +25,7 @@ import com.ociweb.pronghorn.pipe.PipeConfig;
 import com.ociweb.pronghorn.pipe.PipeWriter;
 import com.ociweb.pronghorn.pipe.RawDataSchema;
 import com.ociweb.pronghorn.pipe.util.StreamRegulator;
-import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
+import com.ociweb.pronghorn.stage.generator.FuzzDataStageGenerator;
 import com.ociweb.pronghorn.util.Appendables;
 import com.ociweb.pronghorn.util.CPUMonitor;
 
@@ -53,7 +53,7 @@ public class ReadWriteTest {
         try {
             if (null==generatedClass) {
                 StringBuilder target = new StringBuilder();
-                FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null);
+                FuzzDataStageGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null);
                     
                 try {
                     ew.processSchema();

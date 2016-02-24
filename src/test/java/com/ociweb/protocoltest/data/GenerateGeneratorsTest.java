@@ -3,39 +3,21 @@ package com.ociweb.protocoltest.data;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
 import com.ociweb.pronghorn.code.LoaderUtil;
-import com.ociweb.pronghorn.pipe.DataOutputBlobWriter;
-import com.ociweb.pronghorn.pipe.FieldReferenceOffsetManager;
 import com.ociweb.pronghorn.pipe.MessageSchema;
-import com.ociweb.pronghorn.pipe.MessageSchemaDynamic;
 import com.ociweb.pronghorn.pipe.Pipe;
 import com.ociweb.pronghorn.pipe.PipeConfig;
-import com.ociweb.pronghorn.pipe.schema.loader.TemplateHandler;
-import com.ociweb.pronghorn.pipe.util.build.TemplateProcessGeneratorLowLevelReader;
 import com.ociweb.pronghorn.stage.PronghornStage;
-import com.ociweb.pronghorn.stage.monitor.MonitorConsoleStage;
+import com.ociweb.pronghorn.stage.generator.FuzzDataStageGenerator;
 import com.ociweb.pronghorn.stage.scheduling.GraphManager;
 import com.ociweb.pronghorn.stage.scheduling.ThreadPerStageScheduler;
-import com.ociweb.pronghorn.stage.test.ConsoleJSONDumpStage;
-import com.ociweb.pronghorn.stage.test.ConsoleSummaryStage;
-import com.ociweb.pronghorn.stage.test.FuzzGeneratorGenerator;
-import com.ociweb.pronghorn.stage.test.PipeCleanerStage;
-import com.ociweb.pronghorn.util.NullAppendable;
 import com.ociweb.protocoltest.data.build.SequenceExampleAFuzzGeneratorCustom;
 import com.ociweb.protocoltest.data.build.SequenceExampleAFuzzGeneratorStageCustom;
 
@@ -50,7 +32,7 @@ public class GenerateGeneratorsTest {
     public void generateSequenceExampleA() {
         
         StringBuilder target = new StringBuilder();
-        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null);
+        FuzzDataStageGenerator ew = new SequenceExampleAGeneratorGenerator(target,  null);
 
         try {
             ew.processSchema();
@@ -118,7 +100,7 @@ public class GenerateGeneratorsTest {
         
         StringBuilder target = new StringBuilder();
         
-        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target);
+        FuzzDataStageGenerator ew = new SequenceExampleAGeneratorGenerator(target);
 
         long estMsgSize = SequenceExampleA.estimatedBytes(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         
@@ -253,7 +235,7 @@ public class GenerateGeneratorsTest {
         
         StringBuilder target = new StringBuilder();
         
-        FuzzGeneratorGenerator ew = new SequenceExampleAGeneratorGenerator(target);
+        FuzzDataStageGenerator ew = new SequenceExampleAGeneratorGenerator(target);
 
         long estMsgSize = SequenceExampleA.estimatedBytes(SequenceExampleASchema.FIXED_SAMPLE_COUNT);
         
