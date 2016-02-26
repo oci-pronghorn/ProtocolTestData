@@ -2,7 +2,9 @@ package com.ociweb.protocoltest.data;
 
 import java.io.IOException;
 
+import com.ociweb.pronghorn.pipe.MessageSchema;
 import com.ociweb.pronghorn.pipe.stream.LowLevelStateManager;
+
 import com.ociweb.pronghorn.stage.generator.FuzzDataStageGenerator;
 import com.ociweb.pronghorn.util.Appendables;
 
@@ -59,11 +61,18 @@ public class SequenceExampleAGeneratorGenerator extends FuzzDataStageGenerator {
     }
 
     @Override
-    protected void additionalImports(Appendable target) throws IOException {
-        super.additionalImports(target);
-        target.append("import ").append(SequenceExampleA.class.getCanonicalName()).append(";\n");       
-        target.append("import ").append(SequenceExampleAFactory.class.getCanonicalName()).append(";\n");         
+    protected void additionalImports(MessageSchema schema, Appendable target) {
         
+        try {
+            target.append("import ").append(com.ociweb.pronghorn.stage.PronghornStage.class.getCanonicalName()).append(";\n");
+            target.append("import ").append(SequenceExampleA.class.getCanonicalName()).append(";\n");       
+            target.append("import ").append(SequenceExampleAFactory.class.getCanonicalName()).append(";\n");         
+            target.append("import ").append(SequenceExampleASchema.class.getCanonicalName()).append(";\n");
+          
+            
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     @Override
